@@ -53,11 +53,6 @@ fail - \e[0;36m - cyan
 
 调用函数。
 
-apt检测漏洞软件包
-https://cloud.tencent.com/developer/article/1006943
-https://blog.csdn.net/longerzone/article/details/16967579
-python 库
-https://www.s0nnet.com/archives/vulnerability-package-detection-under-linux
 #### MountOption 函数
 
 检查fs的挂载选项。
