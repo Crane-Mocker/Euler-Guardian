@@ -61,6 +61,10 @@ gitlab 地址：
 
 检查内核信息并输出，包括内核版本, 编译使用的gcc版本，编译的时间和release信息。
 
+#### Security policy check
+
+检查是否开启了SELinux, 检查资源的限制情况。
+
 #### user info
 
 检查用户信息。
@@ -69,7 +73,11 @@ gitlab 地址：
 
 #### file premission
 
-检查目录下文件的权限。
+检查无属组的777权限文件。
+
+检查指定目录下文件的权限, 默认rwxrwxrwx权限。
+
+文件权限的检查和用户的需求有很大关系。
 
 #### 软件包版本漏洞检查
 
@@ -79,15 +87,6 @@ gitlab 地址：
 
 调用函数。
 
-#### MountOption 函数
-
-检查fs的挂载选项。
-
-/etc/fstab 的数据项：设备名称(实际设备名称或设备名称标签), 挂载点, 分区的类型(fs)，挂载选项, dump选项(0/1),fsck选项(0/1)
-
-> 为了增加Linux系统安全性，建议将/tmp目录单独的挂载于一个独立的系统分区之上。但是仅仅挂载还不够，需要在挂载时为该分区指定nodev/nosuid/noexec选项，才能提高tmp文件目录的安全性。
-
-`/tmp`挂载安全的选项参考: https://www.huaweicloud.com/articles/22202d2c18e5c9e28e2ee8374bc9b667.html
 
 #### selinux检查
 

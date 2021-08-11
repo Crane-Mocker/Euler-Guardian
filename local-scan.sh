@@ -77,6 +77,25 @@ function SysInfoChk() {
 	fi
 }
 
+####################################################################
+# 安全策略检查
+# selinux 资源限制
+####################################################################
+function SecCheck() {
+	# SElinux 是否开启
+	SEstatus=`sestatus 2>/dev/null`
+	if [ "$SEstatus" ]; then
+		echo -e "\e[1;34mSElinux status:\n\033[0m"
+		cat /etc/selinux/config | grep SELINUX=
+	else
+		echo -e "\e[0;36mNo SELinux found.\n\033[0m"|tee -a $report 2>/dev/null
+	fi
+
+	# 资源限制情况
+	echo -e "\e[1;34mLimitations for various resources:\n\033[0m"
+	ulimit -a
+}
+
 ########################################################################
 # user info
 ########################################################################
@@ -132,62 +151,78 @@ function UserInfoChk() {
 
 
 #######################################################################
-#file permission/ownership check
+# file permission/ownership check
+# 文件权限检查需要根据用户的需求
 #######################################################################
 function FilePermChk() {
 	echo -e "\e[1;32mFiles permission and ownership check starts...\033[0m"
 
-	FilesPath="consts functions"
+	# 无属组的777权限文件
+	echo -e "\e[1;32m\nFind files have 777 perms without group belonged to from root dir:\033[0m"
+	echo -e "\e[0;32mIt may take several minutes.\033[0m"
+	find / -perm 777 -nogroup 2>/dev/null
+
 	Issue=0
 	IssueType=0
 	ShowPermissionErr=0 # 1-currently scan is not run by root
-	IncludeDir="" #with bash files to do tests
 
-	for File in ${FilesPath}; do
-		FilePermission=$(ls -l ${IncludeDir}/${File} | cut -c 2-10)
-		GroupPermission=$(ls -l ${IncludeDir}/${File} | cut -c 5-7)
-		GroupOwnerId=$(ls -n ${IncludeDir}/${File} | awk '{print $4}')
-		Owner=$(ls -l ${IncludeDir}/${File} | awk -F" " '{print $3}')
-		OwnerId=$(ls -n ${IncludeDir}/${File} | awk -F" " '{print $3}')
-		#check permissions of include files
-		#for files has alll rwx
-		if [ "${FilePermission}" = "rwxrwxrwx" ]; then
-			Issue=1
-			IssueType="perms"
-			echo -e "\e[1;34mChange file permissions of ${IncludeDir}/${File} to 640.\033[0m"
-			#echo "Command: chmod 640 ${IncludeDir}/${File}"
-		#if group owner id=owner id, consider it as defualt umask
-		elif [ ! "${FilePermission}"="r--------" -a ! "${FilePermission}"="rw-------"-a!"${FilePermission}"="rw-r-----" -a ! "${FilePermission}"="rw-r--r--" ];then
-			if [ ! "${GroupOwnerId}" = "${OwnerId}" ]; then
-				Issue=1;
-				IssueType="perms"
-				echo -e "\033[0mChange file permissions of ${IncludeDir}/${File} to 640."
-			fi
-		fi
+	echo -e "\e[0;36mPlease input a path to check e.g.\e[1;35m.\e[0;36m or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
+	echo -e "\e[0;36mAnd then input the perm you want to check e.g.\e[1;35mr--------\e[0;36m.or \e[1;35mnext\e[0;36m to skip this step.\033[0m"
+	echo -e "Defualtly, \e[1;35mrwxrwxrwx\e[0;36m will be checked."
+	echo -e "\e[1;32mPlease input a path:\033[0m"
+	read FilesPath #with bash files to do tests
 
-		#check if it's root user to run scan
-		if [ ! "${Owner}" = "root" -a ! "${OwnerId}" = "0" ]; then
-			if [ ! "${CurrentId}" = "${OwnerId}" ]; then
-				Issue=1
-				IssueType="owner"
-				ShowPermissionErr=1;
-				IssueFile="${File}" #the file with issue
-				IssueOwner="${Owner}"
-				IssueOwnerId="${OwnerId}"
+	while [[ "$FilesPath" != "next" ]]; do
+		echo -e "\e[1;32mPlease input the target permissions:\033[0m"
+		read TgtPerm
+
+		for File in ${FilesPath}/*; do
+			#echo -e "file: $File\n"
+			FilePermission=$(ls -l ${File} | cut -c 2-10)
+			#echo -e "perm: $FilePermission"
+			GroupPermission=$(ls -l ${File} | cut -c 5-7)
+			#echo -e "Gprem: $GroupOwnerId"
+			GroupOwnerId=$(ls -n ${File} | awk '{print $4}')
+			#echo -e "GOID: $GroupOwnerId"
+			Owner=$(ls -l ${File} | awk -F" " '{print $3}')
+			#echo -e "Owner: $Owner"
+			OwnerId=$(ls -n ${File} | awk -F" " '{print $3}')
+			#echo -e "OID: $OwnerId"
+
+			# without TgtPerm, check for files with all rwx perms
+			if [ "$TgtPerm" = "next" ]; then
+				if [ "${FilePermission}" = "rwxrwxrwx" ]; then
+					Issue=1
+					IssueType="perms"
+					echo -e "\e[1;34m${File} has perms: ${FilePermission}.\033[0m"
+				fi
+
+			# check for files perms according to target perms
+		elif [[ "${FilePermission}" == "${TgtPerm}" ]];then
+				echo -e "\e[1;34m${File} has perms: ${FilePermission}.\033[0m"
+				if [[ "${GroupOwnerId}" != "${OwnerId}" ]]; then
+					Issue=1;
+					IssueType="perms"
+					echo -e "\033[0mRecommand to change file perms of ${File} to 640."
+				fi
 			fi
-		fi
+
+			#check if it's root user to run scan
+			if [ ! "${Owner}" = "root" -a ! "${OwnerId}" = "0" ]; then
+				if [ ! "${CurrentId}" = "${OwnerId}" ]; then
+					Issue=1
+					IssueType="owner"
+					ShowPermissionErr=1;
+					IssueFile="${File}" #the file with issue
+					IssueOwner="${Owner}"
+					IssueOwnerId="${OwnerId}"
+				fi
+			fi
+
+		done
+		echo -e "\e[1;32mPlease input a path:\033[0m"
+		read FilesPath #with bash files to do tests
 	done
-
-	#if scan isn't run by Root
-	if [ ${ShowPermissionErr} -eq 1 ]; then
-		print "%s" "
-
-	[!] Change ownership of ${IncludeDir}/${IssueFile} to 'root' or similar (found: ${IssueOwner} with UID ${IssueOwnerId}).
-
-	Command:
-	  # chown 0:0 ${IncludeDir}/${IssueFile}
-	"
-	fi
 }
 
 ####################################################################
@@ -276,7 +311,6 @@ function OVALChk() {
 #####################################################################
 FSTAB='/etc/fstab'
 GRUB_CFG='/boot/grub/grub.cfg' #/boot/grub2/grub.cfg
-GRUB_DIR='/etc/grub.d'
 
 #####################################################################
 # 函数调用
@@ -294,34 +328,6 @@ function Function {
 	fi
 }
 
-######################################################################
-# 挂载选项
-# nodev: 在挂载时添加nodev选项，系统不会把该fs的block/character文件
-# 当作是block/character文件来处理。
-# nosuid: 阻止suid和sgid位的操作
-# noexec: 该挂载点的文件不允许运行(即使有x权限)
-# MountOption [filesystem挂载点对应的文件系统] [mountOption挂载选项]
-#####################################################################
-
-function MountOption() {
-	local filesystem="${1}"
-	local mountOption="${2}"
-	#执行命令，失败则return
-	grep "[[:space:]]${filesystem}[[:space:]]" "${FSTAB}" | grep -q "${mountOption}" || return
-	mount | greo "[[:space:]]${filesystem}[[:space:]]" | grep -q "${mountOption}" || return
-}
-
-####################################################################
-# selinux检查
-####################################################################
-function SELinuxCheck() {
-	#if SElinux is disabled in grub.cfg selinux=0关闭
-	local SelinuxEq0="$(grep selinux=0 ${GRUB_CFG})"
-	[[ -z "${SelinuxEq0}" ]] || return
-	local enforcingEq0="$(grep enforcing=0 $(GRUB_CFG))"
-	[[ -z "${enforcingEq0}" ]] || return
-}
-
 ###################################################################
 # 自定义函数
 ###################################################################
@@ -336,9 +342,13 @@ function SELinuxCheck() {
 #####################################################################
 
 #banner
-echo -e "\e[1;32m---------------------------------------\n"
-echo -e "Welcome to use Euler Guardian!\n"
-echo -e "---------------------------------------\n\033[0m"
+echo -e "\e[1;32m-----------------------------------------------"
+echo " ___         __              "
+echo "(_    /_ _  / _   _ _ _/'_   "
+echo "/__(/((-/  (__)(/(// (//(//) "
+echo -e "Welcome to use Euler Guardian!"
+echo "This is the local scan module."
+echo -e "-----------------------------------------------\033[0m"
 
 echo -e "\e[1;34m\n-----------------------------------------------"
 echo "System information check start"
@@ -346,6 +356,7 @@ echo -e "-----------------------------------------------\033[0m\n"
 CurrentIdChk
 GetPWD
 SysInfoChk
+SecCheck
 
 echo -e "\e[1;34m\n-----------------------------------------------"
 echo "Users information check start"
