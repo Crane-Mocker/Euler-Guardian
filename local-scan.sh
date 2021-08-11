@@ -10,9 +10,12 @@
 #PROGRAM_AUTHOR="c0conut"
 
 #######################################################################
-# check current id
+# 预操作
+# 1.current id检查，判断是否具有root权限
+# 2.检查SetUID, 获得pwd
+# 3.检查是否有之前检查留下的文件，若有则删除
 #######################################################################
-function CurrentIdChk() {
+function PreOp() {
 	local CurrentId=""
 	if [ -x /usr/xpg4/bin/id ]; then #Solaris
 		CurrentId=$(/usr/xpg4/bin/id -u 2>/dev/null)
@@ -30,20 +33,15 @@ function CurrentIdChk() {
 		IsRoot=0
 		ScanMode=1
 	fi
-}
 
-
-#####################################################################
-# path
-# check SetUID and get the path currently working on
-#####################################################################
-function GetPWD() {
 	#check SetUID ("s")
 	if [ -u "$0" ]; then
 		echo -e "\e[0;36mStopped because of unusual SetUID. Exit.\n\033[0m"
 		exit 1
 	fi
 	WorkDir=$(pwd)
+
+	rm oscap* s.txt 2>/dev/null
 }
 
 ########################################################################
@@ -83,7 +81,7 @@ function SysInfoChk() {
 ####################################################################
 function SecCheck() {
 	# SElinux 是否开启
-	SEstatus=`sestatus 2>/dev/null`
+	local SEstatus=`sestatus 2>/dev/null`
 	if [ "$SEstatus" ]; then
 		echo -e "\e[1;34mSElinux status:\n\033[0m"
 		cat /etc/selinux/config | grep SELINUX=
@@ -94,6 +92,21 @@ function SecCheck() {
 	# 资源限制情况
 	echo -e "\e[1;34mLimitations for various resources:\n\033[0m"
 	ulimit -a
+
+	# 口令安全
+	local passMaxDays=`cat /etc/login.defs | grep ^PASS_MAX_DAYS`
+	if [ "$passMaxDays" ]; then
+		echo -e "\e[1;34mMaximum numbers of days a password may be used:\033[0m${passMaxDays##*[[:space:]]}"
+	else
+		echo -e "\e[1;34mPASS_MAX_DAYS is not setted.\033[0m"
+	fi
+
+	local passMinLen=`cat /etc/login.defs | grep ^PASS_MIN_LEN`
+	if [ "$passMinLen" ]; then
+		echo -e "\e[1;34mManimum length of a password:\033[0m${passMinLen##*[[:space:]]}"
+	else
+		echo -e "\e[1;34mPASS_MIN_LEN is not setted.\033[0m"
+	fi
 }
 
 ########################################################################
@@ -141,7 +154,7 @@ function UserInfoChk() {
 	fi
 
 	#last log for each user
-	local LastLogUser=`lastlog | grep -v "Never" 2>/dev/null`
+	local LastLogUser=`lastlog 2>/dev/null | grep -v "Never"`
 	if [ "$LastLogUser" ]; then
 		echo -e "\e[1;34mUsers previously logged onto system:\e[0m\n$LastLogUser\n\033[0m" |tee -a $report 2>/dev/null
 	else
@@ -156,21 +169,29 @@ function UserInfoChk() {
 #######################################################################
 function FilePermChk() {
 	echo -e "\e[1;32mFiles permission and ownership check starts...\033[0m"
+	echo -e "\e[0;32mIt may take several minutes.\033[0m"
+
+	#查找系统中所有含s权限的文件
+	echo -e "\e[1;32m\nFind files have s permission. Please check it in s.txt\033[0m"
+	find / -type f -perm -4000 -o -perm -2000 -print 2>/dev/null| xargs ls -al > s.txt
 
 	# 无属组的777权限文件
 	echo -e "\e[1;32m\nFind files have 777 perms without group belonged to from root dir:\033[0m"
-	echo -e "\e[0;32mIt may take several minutes.\033[0m"
 	find / -perm 777 -nogroup 2>/dev/null
+
+	# 孤儿文件
+	echo -e "\e[1;32m\nFind orphan files:\033[0m"
+	find / -nouser -o -nogroup 2>/dev/null
 
 	Issue=0
 	IssueType=0
 	ShowPermissionErr=0 # 1-currently scan is not run by root
 
-	echo -e "\e[0;36mPlease input a path to check e.g.\e[1;35m.\e[0;36m or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
+	echo -e "\e[0;36m\nPlease input a path to check e.g.\e[1;35m.\e[0;36m or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
 	echo -e "\e[0;36mAnd then input the perm you want to check e.g.\e[1;35mr--------\e[0;36m.or \e[1;35mnext\e[0;36m to skip this step.\033[0m"
 	echo -e "Defualtly, \e[1;35mrwxrwxrwx\e[0;36m will be checked."
 	echo -e "\e[1;32mPlease input a path:\033[0m"
-	read FilesPath #with bash files to do tests
+	read FilesPath
 
 	while [[ "$FilesPath" != "next" ]]; do
 		echo -e "\e[1;32mPlease input the target permissions:\033[0m"
@@ -221,7 +242,7 @@ function FilePermChk() {
 
 		done
 		echo -e "\e[1;32mPlease input a path:\033[0m"
-		read FilesPath #with bash files to do tests
+		read FilesPath
 	done
 }
 
@@ -295,22 +316,10 @@ function OVALChk() {
 # log auditing
 ########################################################################
 
+function LogAudit() {
+:
+}
 
-
-########################################################################
-# config file check
-########################################################################
-
-
-####################################################################
-# 函数调用部分
-####################################################################
-
-#####################################################################
-# 常量
-#####################################################################
-FSTAB='/etc/fstab'
-GRUB_CFG='/boot/grub/grub.cfg' #/boot/grub2/grub.cfg
 
 #####################################################################
 # 函数调用
@@ -353,8 +362,7 @@ echo -e "-----------------------------------------------\033[0m"
 echo -e "\e[1;34m\n-----------------------------------------------"
 echo "System information check start"
 echo -e "-----------------------------------------------\033[0m\n"
-CurrentIdChk
-GetPWD
+PreOp
 SysInfoChk
 SecCheck
 
