@@ -10,10 +10,11 @@
 #PROGRAM_AUTHOR="c0conut"
 
 #######################################################################
-# 预操作
-# 1.current id检查，判断是否具有root权限
-# 2.检查SetUID, 获得pwd
-# 3.检查是否有之前检查留下的文件，若有则删除
+# pre operations
+# 1.current id check，check if current id has root perms
+# 2.check SetUID, get pwd
+# 3.check if there are results files left from previous scan,
+# if so, delete them
 #######################################################################
 function PreOp() {
 	local CurrentId=""
@@ -76,11 +77,11 @@ function SysInfoChk() {
 }
 
 ####################################################################
-# 安全策略检查
-# selinux 资源限制
+# security policy check
+# selinux, limitations of resources, password security
 ####################################################################
 function SecCheck() {
-	# SElinux 是否开启
+	# SElinux
 	local SEstatus=`sestatus 2>/dev/null`
 	if [ "$SEstatus" ]; then
 		echo -e "\e[1;34mSElinux status:\n\033[0m"
@@ -89,11 +90,11 @@ function SecCheck() {
 		echo -e "\e[0;36mNo SELinux found.\n\033[0m"|tee -a $report 2>/dev/null
 	fi
 
-	# 资源限制情况
+	# limitations of resources
 	echo -e "\e[1;34mLimitations for various resources:\n\033[0m"
 	ulimit -a
 
-	# 口令安全
+	# password security
 	local passMaxDays=`cat /etc/login.defs | grep ^PASS_MAX_DAYS`
 	if [ "$passMaxDays" ]; then
 		echo -e "\e[1;34mMaximum numbers of days a password may be used:\033[0m${passMaxDays##*[[:space:]]}"
@@ -111,6 +112,8 @@ function SecCheck() {
 
 ########################################################################
 # user info
+# hostname, id, user accounts info, if passwords are stored as hash,
+# last login
 ########################################################################
 function UserInfoChk() {
 	# hostname
@@ -165,21 +168,21 @@ function UserInfoChk() {
 
 #######################################################################
 # file permission/ownership check
-# 文件权限检查需要根据用户的需求
+#
 #######################################################################
 function FilePermChk() {
 	echo -e "\e[1;32mFiles permission and ownership check starts...\033[0m"
 	echo -e "\e[0;32mIt may take several minutes.\033[0m"
 
-	#查找系统中所有含s权限的文件
+	# all files with "s" perm
 	echo -e "\e[1;32m\nFind files have s permission. Please check it in s.txt\033[0m"
 	find / -type f -perm -4000 -o -perm -2000 -print 2>/dev/null| xargs ls -al > s.txt
 
-	# 无属组的777权限文件
+	# 777 perm files belonged to nogroup
 	echo -e "\e[1;32m\nFind files have 777 perms without group belonged to from root dir:\033[0m"
 	find / -perm 777 -nogroup 2>/dev/null
 
-	# 孤儿文件
+	# orphan files
 	echo -e "\e[1;32m\nFind orphan files:\033[0m"
 	find / -nouser -o -nogroup 2>/dev/null
 
@@ -247,14 +250,14 @@ function FilePermChk() {
 }
 
 ####################################################################
-# 软件包版本漏洞检查
+# vuln check according to OVAL file
 ####################################################################
 function OVALChk() {
-	# 检查使用的包管理器, 安装oscap
+	# install oscap
 	if [ "$(apt -v 2>/dev/null)" ]; then
-		#使用apt作为包管理器
+		# use apt
 		echo -e "\e[1;34mThis device uses apt.\n\033[0m" |tee -a $report 2>/dev/null
-		# 检查是否有oscap工具
+		# if oscap is installed
 		if [ "$(oscap -h 2>/dev/null)" ]; then
 			:
 		else
@@ -262,10 +265,10 @@ function OVALChk() {
 			sudo apt-get install libopenscap8
 		fi
 	elif [ "$(yum --version 2>/dev/null)" ]; then
-		# 使用yum作为包管理器
+		# use yum
 		echo -e "\e[1;34mThis device uses yum.\n\033[0m" |tee -a $report 2>/dev/null
 
-		# 检查是否有oscap工具
+		# if oscap is installed
 		if [ "$(oscap -h 2>/dev/null)" ]; then
 			:
 		else
@@ -274,7 +277,7 @@ function OVALChk() {
 		fi
 	fi
 
-	# 检查oval文件
+	# check OVAL file
 	# release id
 	tmpStr=`cat /etc/*-release | grep ^ID=`
 	IFS='='
@@ -315,15 +318,14 @@ function OVALChk() {
 ########################################################################
 # log auditing
 ########################################################################
-
 function LogAudit() {
 :
 }
 
 
 #####################################################################
-# 函数调用
-# Function [functionName函数名] [对应函数的参数]
+# Function
+# Function [functionName] [var1 var2 ...]
 #####################################################################
 function Function {
 	functionName=$1 #第一个参数，函数名
@@ -338,7 +340,7 @@ function Function {
 }
 
 ###################################################################
-# 自定义函数
+# myFunction
 ###################################################################
 
 #function myFunction() {
@@ -347,7 +349,7 @@ function Function {
 #}
 
 #####################################################################
-#  程序开始
+#  Program Starts
 #####################################################################
 
 #banner

@@ -45,52 +45,47 @@ gitlab 地址：
 
 ### local scan 本地扫描模块
 
-#### check current id
+#### PreOp 预操作
 
-检查当前的UID是否为root, 兼容Solaris, SunOS和Linux(包括Euler)
+1. 检查current id, 判断是否有root权限
 
-#### path
+2. 检查SetUID, 获得pwd
 
-检查SetUID, 若不正常，即退出。
+3. 检查是否有之前检查留下的文件，若有，则删除
 
-检查当前工作目录，`WorkDir`
-
-#### system info
+#### SysInfoChk 系统信息检查
 
 检查系统信息。
 
 检查内核信息并输出，包括内核版本, 编译使用的gcc版本，编译的时间和release信息。
 
-#### Security policy check
+#### SecCheck 安全策略检查
 
-检查是否开启了SELinux, 检查资源的限制情况。
+检查是否开启了SELinux, 检查资源的限制情况, 检查口令安全策略
 
-#### user info
+#### UserInfoChk 用户信息检查
 
 检查用户信息。
 
 检查hostname和id, 检查口令是否以hash存储，检查上一次登录的用户。
 
-#### file premission
+#### FilePermChk 文件权限检查
 
-检查无属组的777权限文件。
+查找系统中所有含s权限的文件。
 
-检查指定目录下文件的权限, 默认rwxrwxrwx权限。
+查找无属组的777权限文件。
 
-文件权限的检查和用户的需求有很大关系。
+查找孤儿文件。
 
-#### 软件包版本漏洞检查
+查找指定目录下文件的权限, 默认rwxrwxrwx权限。（文件权限的检查和用户的需求有很大关系。）
+
+#### OVALChk 软件包版本漏洞检查
 
 利用OVAL，根据软件包版本检查是否存在CVE漏洞。
 
-#### Function 函数
+#### Function 函数调用
 
 调用函数。
-
-
-#### selinux检查
-
-检查是否开启了SELinux
 
 ### ER emergency response 应急响应模块
 
