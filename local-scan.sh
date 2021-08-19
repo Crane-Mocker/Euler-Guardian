@@ -273,17 +273,18 @@ function OVALChk() {
 			:
 		else
 			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" |tee -a $report 2>/dev/null
-			sudo yum install openscap-utils
+			sudo yum install openscap-utils -y
 		fi
 	fi
 
 	# check OVAL file
 	# release id
-	tmpStr=`cat /etc/*-release | grep ^ID=`
-	IFS='='
+	tmpStr=`cat /etc/*-release | grep ^NAME=`
+	IFS='"'
 	read -ra tmpArr <<<"$tmpStr"
-	releaseIDStr=${tmpArr[1]}
-	#echo "$releaseIDStr"
+	tmpStr1=${tmpArr[1]}
+	releaseNameStr=${tmpStr1,,}
+	#echo "$releaseNameStr"
 
 	# release version id
 	tmpStr=`cat /etc/*-release | grep VERSION_ID 2>/dev/null`
@@ -293,19 +294,20 @@ function OVALChk() {
 	releaseVersionIDStr=`echo ${releaseVersionID//./}`
 	#echo "$releaseVersionIDStr"
 
-	targetOVALFile="${releaseIDStr}_${releaseVersionIDStr}.xml"
+	targetOVALFile="${releaseNameStr}_${releaseVersionIDStr}.xml"
 	#echo "$targetOVALFile"
 	hasOVALFile=`ls | grep ${targetOVALFile} 2>/dev/null`
 	if [ "$hasOVALFile" ]; then
 		echo -e "\e[1;34mOVAL file found:\e[00m\n$targetOVALFile\n\033[0m" |tee -a $report 2>/dev/null
 	else
 		echo -e "\e[0;36mNo target OVALFile found. Downloading...\n\033[0m" |tee -a $report 2>/dev/null
-		wget https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/${targetOVALFile}
+		wget -q https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/${targetOVALFile}
 		hasOVALFile=`ls | grep ${targetOVALFile} 2>/dev/null`
-		if [ "hasOVALFile" ]; then
+		if [ "$hasOVALFile" ]; then
 			:
+			#echo "has oval file"
 		else
-			wget https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/centos_linux_73.xml
+			wget -q https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/centos_linux_73.xml
 			targetOVALFile="centos_linux_73.xml"
 		fi
 	fi

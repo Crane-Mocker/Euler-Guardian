@@ -43,7 +43,7 @@ function CertainFileTypeCheck() {
 		echo -e "\e[1;32mPlease input a type of file:\033[0m"
 		read fileType
 	done
-	echo -e "\e[1;32mFiles check finished.\033[0m"
+	echo -e "\e[1;32mFiles types check finished.\033[0m"
 }
 
 #####################################################################
@@ -98,7 +98,7 @@ function PIDProcAnalyse() {
 #
 #####################################################################
 function HiddenProc() {
-	echo -e "\e[1;32mCheck hidden processes.\033[0m"
+	echo -e "\e[1;32mCheck hidden processes.\n\033[0m"
 	ps -ef | awk '{print}' | sort -n | uniq >tmp1
 	ls /proc | sort -n | uniq >tmp2
 	diff tmp1 tmp2
@@ -128,16 +128,17 @@ function HistoryCheck() {
 # 用户错误登录
 #####################################################################
 function UserAnalyse() {
-	echo -e "\e[1;32mCheck user UID=0:\033[0m"
+	echo -e "\n\e[1;32mCheck user UID=0:\033[0m"
 	awk -F: '{if($3==0)print $1}' /etc/passwd
-	echo -e "\e[1;32mUsers who can log in:\033[0"
+
+	echo -e "\n\e[1;32mUsers who can log in:\033[0m"
 	cat /etc/passwd | grep -E "/bin/bash$"
 
-	echo -e "\e[1;32mAll users last log in:\033[0m"
+	echo -e "\n\e[1;32mAll users last log in:\033[0m"
 	lastlog
-	echo -e "\e[1;32mUsers failed to log in:\033[0m"
+	echo -e "\n\e[1;32mUsers failed to log in:\033[0m"
 	sudo lastb
-	echo -e "\e[1;32mAll users log in and out:\033[0m"
+	echo -e "\n\e[1;32mAll users log in and out:\033[0m"
 	last -F
 }
 
@@ -172,7 +173,7 @@ function WebshellCheck() {
 #####################################################################
 
 #banner
-echo -e "\e[1;32m-----------------------------------------------"
+echo -e "\n\e[1;32m-----------------------------------------------"
 echo " ___         __              "
 echo "(_    /_ _  / _   _ _ _/'_   "
 echo "/__(/((-/  (__)(/(// (//(//) "
@@ -180,32 +181,32 @@ echo -e "Welcome to use Euler Guardian!"
 echo "This is the emergency response module."
 echo -e "-----------------------------------------------\033[0m"
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Basic check start"
 echo -e "-----------------------------------------------\033[0m\n"
 BasicCheck
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Files check start"
 echo -e "-----------------------------------------------\033[0m\n"
 CertainFileTypeCheck
 FilesChangedTime
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Net process check start"
 echo -e "-----------------------------------------------\033[0m\n"
 ProcAnalyse
 PIDProcAnalyse
 HiddenProc
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "History and log check start"
 echo -e "-----------------------------------------------\033[0m\n"
 HistoryCheck
 UserAnalyse
 CronCheck
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Webshell check start"
 echo -e "-----------------------------------------------\033[0m\n"
 WebshellCheck
