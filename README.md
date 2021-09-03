@@ -39,6 +39,11 @@ gitlab 地址：
 |normal output info | \e[00m | default |
 |fail | \e[0;36m | cyan|
 
+## css
+
+初始化CSS来自：
+https://necolas.github.io/normalize.css/8.0.1/normalize.css
+
 ## 模块说明
 
 ### local scan 本地扫描模块

@@ -42,7 +42,7 @@ function PreOp() {
 	fi
 	WorkDir=$(pwd)
 
-	rm oscap* s.txt 2>/dev/null
+	rm oscap* res/s.txt 2>/dev/null
 }
 
 ########################################################################
@@ -176,7 +176,7 @@ function FilePermChk() {
 
 	# all files with "s" perm
 	echo -e "\e[1;32m\nFind files have s permission. Please check it in s.txt\033[0m"
-	find / -type f -perm -4000 -o -perm -2000 -print 2>/dev/null| xargs ls -al > s.txt
+	find / -type f -perm -4000 -o -perm -2000 -print 2>/dev/null| xargs ls -al > res/s.txt
 
 	# 777 perm files belonged to nogroup
 	echo -e "\e[1;32m\nFind files have 777 perms without group belonged to from root dir:\033[0m"
@@ -312,7 +312,7 @@ function OVALChk() {
 		fi
 	fi
 
-	oscap oval eval --results ./oscap_results.xml --report ./oscap_report.html ${targetOVALFile}
+	oscap oval eval --results ./oscap_results.xml --report ./report/oscap_report.html ${targetOVALFile}
 	echo -e "\e[1;34mPlease check for vuln scan results in oscap_results.xml and oscap_report.html\n\033[0m" |tee -a $report 2>/dev/null
 }
 
@@ -339,6 +339,30 @@ function Function {
 	else
 		echo -e ${functionName} ${args} "\e[0;31mCheck failed. \033[0m"
 	fi
+}
+
+#####################################################################
+#  create report
+#####################################################################
+function reportHead() {
+	dateStamp=`date "+%s"`
+
+	echo "<!DOCTYPE html>
+	<html lang='en' dir='ltr'>
+		<head>
+			<meta charset='utf-8'>
+			<meta name='viewport' content='width=device-width,initial-scale=1'>
+			<script src='https://rawgit.com/aFarkas/html5shiv/gh-pages/dist/html5shiv.min.js'></script>
+			<link rel='stylesheet' href='normalize.css'>
+			<title></title>
+		</head>
+		<body>" > ./report/${dateStamp}_EG_report.html
+}
+
+function reportFoot() {
+	dateStamp2Date=`date -d @${dateStamp}`
+	echo "<div>$dateStamp2Date</div>
+	</body></html>" >> ./report/${dateStamp}_EG_report.html
 }
 
 ###################################################################

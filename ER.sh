@@ -169,6 +169,30 @@ function WebshellCheck() {
 }
 
 #####################################################################
+#  create report
+#####################################################################
+function reportHead() {
+	dateStamp=`date "+%s"`
+
+	echo "<!DOCTYPE html>
+	<html lang='en' dir='ltr'>
+		<head>
+			<meta charset='utf-8'>
+			<meta name='viewport' content='width=device-width,initial-scale=1'>
+			<script src='https://rawgit.com/aFarkas/html5shiv/gh-pages/dist/html5shiv.min.js'></script>
+			<link rel='stylesheet' href='normalize.css'>
+			<title></title>
+		</head>
+		<body>" > ./report/${dateStamp}_ER_report.html
+}
+
+function reportFoot() {
+	dateStamp2Date=`date -d @${dateStamp}`
+	echo "<div>$dateStamp2Date</div>
+	</body></html>" >> ./report/${dateStamp}_ER_report.html
+}
+
+#####################################################################
 #  程序开始
 #####################################################################
 
@@ -180,6 +204,8 @@ echo "/__(/((-/  (__)(/(// (//(//) "
 echo -e "Welcome to use Euler Guardian!"
 echo "This is the emergency response module."
 echo -e "-----------------------------------------------\033[0m"
+
+#reportHead
 
 echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Basic check start"
@@ -210,3 +236,5 @@ echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Webshell check start"
 echo -e "-----------------------------------------------\033[0m\n"
 WebshellCheck
+
+#reportFoot
