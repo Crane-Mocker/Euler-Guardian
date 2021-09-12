@@ -73,24 +73,24 @@ function FilesChangedTime() {
 #
 #####################################################################
 function ProcAnalyse() {
-	echo -e "\e[1;32mCheck net process\n\033[0m"
-	netstat -antlp
-}
-
-#####################################################################
-# 根据PID查看proc详情
-#
-#####################################################################
-function PIDProcAnalyse() {
-	echo -e "\e[0;36mInput PID or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
-	echo -e "\e[1;32mPlease input the PID you want to analyse:\033[0m"
-	read procID
-	while [[ "$procID" != "next" ]]; do
-		ps aux | grep "${procID}" | grep -v grep
-		echo -e "\e[1;32mPlease input the PID you want to analyse:\033[0m"
-		read procID
-	done
-	echo -e "\e[1;32mProcess analysis finished.\033[0m"
+	echo -e "\n\e[1;34mChecking proc that uses CPU a lot.\033[0m"
+	procCPU=`ps -aux 2>/dev/null | grep -v PID | sort -rn -k3 | head | awk '{print $1,$2,$3,$4,$11}' | grep -v 'systemd|rsyslogd|mysqld|redis|apache||nginx|mongodb|docker|memcached|tomcat|jboss|java|php|python'`
+	# USER PID percent
+	#echo "$procCPU"
+	tmpCnt=0
+	while read line; do
+		IFS=" "
+		tmpArr=($line)
+		#echo "${tmpArr[2]}"
+		# use more than 30% CPU
+		if [ `echo "${tmpArr[2]}>30.0" | bc` -eq 1 ]; then
+			echo -e "\e[1;33mLow risk. Proc ${tmpArr[1]} uses ${tmpArr[2]}\% CPU \033[0m"
+			let tmpCnt++
+		fi
+	done <<< "$procCPU"
+	if [[ $tmpCnt -eq 0 ]]; then
+		echo -e "\e[1;32mNormal. No proc that uses CPU a lot found\033[0m"
+	fi
 }
 
 #####################################################################
@@ -107,29 +107,55 @@ function HiddenProc() {
 
 #####################################################################
 # 检查history
-# wget, ssh, scp(匹配ssh中IP), tar, zip
+# wget, ssh，ssh brute-force
 #####################################################################
 function HistoryCheck() {
-	echo -e "\e[1;32mwget in sh history:\033[0m"
+	echo -e "\n\e[1;34mmwget in sh history:\033[0m"
 	history | grep wget
-	echo -e "\e[1;32mssh in sh history:\033[0m"
+	echo -e "\n\e[1;34mssh in sh history:\033[0m"
 	history | grep ssh
-	history | grep scp
-	echo -e "\e[1;32mssh IP:\033[0m"
-	strings /usr/bin/.sshd | egrep '[1-9]{1,3}.[1-9]{1,3}.'
-	echo -e "\e[1;32mPress in sh hisory:\033[0m"
-	history | grep tar
-	history | grep zip
+	echo -e "\n\e[1;34mChecking ssh login brute-force:\033[0m"
+	loginTimes=`lastb | grep root | wc -l`
+	#loginTimes=51
+	if [ $loginTimes -gt 50 ]; then
+		loginIPs=`lastb | grep root | awk '{print $3}' | sort | uniq 2>/dev/null`
+		#loginIPs=`echo -e "220.181.38.148"`
+		echo -e "\e[1;31mHigh risk. These IPs tried to login as root:\n$loginIPs\033[0m"
+		echo -e "\e[0;35mSuggestion: Add unauthorized IPs to blacklist\033[0m"
+	else
+		echo -e "\e[1;32mNormal. No SSH login brute-force found\033[0m"
+	fi
 }
 
 #####################################################################
 # 检查用户
-# 有root权限的、能登录的user, 所有用户最近一次登录，
+# 有root权限用户，空口令用户、能登录的user, 所有用户最近一次登录，
 # 用户错误登录
 #####################################################################
 function UserAnalyse() {
-	echo -e "\n\e[1;32mCheck user UID=0:\033[0m"
-	awk -F: '{if($3==0)print $1}' /etc/passwd
+	echo -e "\n\e[1;34mChecking user UID=0.\033[0m"
+	rootUsers=`awk -F: '{if($3==0)print $1}' /etc/passwd`
+	#rootUsers=`echo -e "root\nadmin\nelse"`
+	for eachUser in $rootUsers; do
+		if [[ "$eachUser" == "root" ]]; then
+			echo -e "\e[1;32mNormal. Found root user: $eachUser\033[0m"
+		else
+			echo -e "\e[1;31mHigh risk. Found root user: $eachUser\033[0m"
+		fi
+	done
+
+	echo -e "\n\e[1;34mChecking user without password.\033[0m"
+	pwUsers=`awk -F: 'length($2)==0 {print $1}' /etc/shadow 2>/dev/null`
+	#pwUsers=`echo -e "admin\nelse"`
+	#echo "$pwUserss"
+	if [[ "$pwUsers" == "" ]]; then
+		echo -e "\e[1;32mNormal. Did not find user without password.\033[0m"
+	else
+		for eachUser in $pwUsers; do
+			echo -e "\e[1;31mHigh risk. Found user without password: $eachUser\033[0m"
+		done
+		echo -e "\e[0;35mSuggestion: Delete the high risk users\033[0m"
+	fi
 
 	echo -e "\n\e[1;32mUsers who can log in:\033[0m"
 	cat /etc/passwd | grep -E "/bin/bash$"
@@ -222,7 +248,6 @@ echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Net process check start"
 echo -e "-----------------------------------------------\033[0m\n"
 ProcAnalyse
-PIDProcAnalyse
 HiddenProc
 
 echo -e "\n\e[1;34m\n-----------------------------------------------"

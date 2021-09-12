@@ -39,6 +39,15 @@ gitlab 地址：
 |normal output info | \e[00m | default |
 |fail | \e[0;36m | cyan|
 
+
+|color|info|
+|---|---|
+|blue| process display|
+|default|information display|
+|green|normal|
+|yellow|low risk|
+|red|high risk|
+|purple|suggesion to repair|
 ## css
 
 初始化CSS来自：
@@ -106,18 +115,25 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 #### 进程检查
 
-网络连接命令检查可疑PID
+检查proc使用CPU的百分比。多余n%->低危
 
 输入PID, 查看详情
 
 检查隐藏的process
 
-#### history和log检查
+#### HistoryCheck
 
-检查命令记录中的wget ssh scp tar zip, 匹配ssh中IP
-
-检查有root权限/能登录的users, 列出所有用户最后一次登录，列出用户登录情况
+检查history中wget
+检查history中ssh
+ssh root登录失败>50 -> ip可能为爆破ssh的IP
 
 #### webshell检查
 
 基于文件的webshell检查, 支持php asp jsp
+
+#### UserAnalyse
+
+提示信息+输出(是否危险)+修复建议
+
+检查有root权限的用户，若不为root->高危。
+检查空口令用户->高危。
