@@ -16,10 +16,10 @@
 #####################################################################
 function BasicCheck() {
 	echo -e "\e[1;32mFiles under /tmp:\n\033[0m"
-	ls -alt /tmp
+	ls -alt /tmp 2>/dev/null
 
 	echo -e "\e[1;32mServices can be started and stopped manually:\n\033[0m"
-	ls -alt /etc/init.d
+	ls -alt /etc/init.d 2>/dev/null
 
 	echo -e "\e[1;32mPATH:\033[0m"
 	echo $PATH
@@ -29,47 +29,51 @@ function BasicCheck() {
 # 可疑文件类型检查（如jsp等)
 # 在指定目录下检查24h改变的/有777权限的特定类型文件
 #####################################################################
-function CertainFileTypeCheck() {
-	echo -e "\e[0;36mInput file type e.g.\e[1;35mjsp\e[0;36m or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
-	echo -e "\e[1;32mPlease input a type of file:\033[0m"
-	read fileType
-	while [[ "$fileType" != "next" ]]; do
-		echo -e "\e[1;32mPlease input the path you want to check:\033[0m"
-		read PathChk
-		echo -e "\e[1;32m$fileType files that were changed in 24h \n\033[0m"
-		find $PathChk -mtime 0 -name "*.$fileType"
-		echo -e "\e[1;32m$fileType files that have 777 perm \n\033[0m"
-		find $PathChk *.$fileType -perm 4777
-		echo -e "\e[1;32mPlease input a type of file:\033[0m"
-		read fileType
-	done
-	echo -e "\e[1;32mFiles types check finished.\033[0m"
+function SensitiveFileCheck() {
+	echo -e "\n\e[1;34mChecking unusual modules loaded in kernel.\033[0m"
+	unusualMod=`lsmod | grep -v "ablk_helper|ac97_bus|acpi_power_meter|aesni_intel|ahci|ata_generic|ata_piix|auth_rpcgss|binfmt_misc|bluetooth|bnep|bnx2|bridge|cdrom|cirrus|coretemp|crc_t10dif|crc32_pclmul|crc32c_intel|crct10dif_common|crct10dif_generic|crct10dif_pclmul|cryptd|dca|dcdbas|dm_log|dm_mirror|dm_mod|dm_region_hash|drm|drm_kms_helper|drm_panel_orientation_quirks|e1000|ebtable_broute|ebtable_filter|ebtable_nat|ebtables|edac_core|ext4|fb_sys_fops|floppy|fuse|gf128mul|ghash_clmulni_intel|glue_helper|grace|i2c_algo_bit|i2c_core|i2c_piix4|i7core_edac|intel_powerclamp|ioatdma|ip_set|ip_tables|ip6_tables|ip6t_REJECT|ip6t_rpfilter|ip6table_filter|ip6table_mangle|ip6table_nat|ip6ta ble_raw|ip6table_security|ipmi_devintf|ipmi_msghandler|ipmi_si|ipmi_ssif|ipt_MASQUERADE|ipt_REJECT|iptable_filter|iptable_mangle|iptable_nat|iptable_raw|iptable_security|iTCO_vendor_support|iTCO_wdt|jbd2|joydev|kvm|kvm_intel|libahci|libata|libcrc32c|llc|lockd|lpc_ich|lrw|mbcache|megaraid_sas|mfd_core|mgag200|Module|mptbase|mptscsih|mptspi|nf_conntrack|nf_conntrack_ipv4|nf_conntrack_ipv6|nf_defrag_ipv4|nf_defrag_ipv6|nf_nat|nf_nat_ipv4|nf_nat_ipv6|nf_nat_masquerade_ipv4|nfnetlink|nfnetlink_log|nfnetlink_queue|nfs_acl|nfsd|parport|parport_pc|pata_acpi|pcspkr|ppdev|rfkill|sch_fq_codel|scsi_transport_spi|sd_mod|serio_raw|sg|shpchp|snd|snd_ac97_codec|snd_ens1371|snd_page_alloc|snd_pcm|snd_rawmidi|snd_seq|snd_seq_device|snd_seq_midi|snd_seq_midi_event|snd_timer|soundcore|sr_mod|stp|sunrpc|syscopyarea|sysfillrect|sysimgblt|tcp_lp|ttm|tun|uvcvideo|videobuf2_core|videobuf2_memops|videobuf2_vmalloc|videodev|virtio|virtio_balloon|virtio_console|virtio_net|virtio_pci|virtio_ring|virtio_scsi|vmhgfs|vmw_balloon|vmw_vmci|vmw_vsock_vmci_transport|vmware_balloon|vmwgfx|vsock|xfs|xt_CHECKSUM|xt_conntrack|xt_state|raid*|tcpbbr|btrfs|.*diag|psmouse|ufs|linear|msdos|cpuid|veth|xt_tcpudp|xfrm_user|xfrm_algo|xt_addrtype|br_netfilter|input_leds|sch_fq|ib_iser|rdma_cm|iw_cm|ib_cm|ib_core|.*scsi.*|tcp_bbr|pcbc|autofs4|multipath|hfs.*|minix|ntfs|vfat|jfs|usbcore|usb_common|ehci_hcd|uhci_hcd|ecb|crc32c_generic|button|hid|usbhid|evdev|hid_generic|overlay|xt_nat|qnx4|sb_edac|acpi_cpufreq|ixgbe|pf_ring|tcp_htcp|cfg80211|x86_pkg_temp_thermal|mei_me|mei|processor|thermal_sys|lp|enclosure|ses|ehci_pci|igb|i2c_i801|pps_core|isofs|nls_utf8|xt_REDIRECT|xt_multiport|iosf_mbi|qxl|cdc_ether|usbnet|bluetooth" | grep -v "Module" 2>/dev/null`
+	if [[ "$unusualMod" == "" ]]; then
+		echo -e "\e[1;32mNormal. No unusual module found\033[0m"
+	else
+		while read line; do
+			IFS=" "
+			tmpArr=($line)
+			echo -e "\e[1;33mLow risk. Module: ${tmpArr[0]}\033[0m"
+		done <<< "$unusualMod"
+	fi
+
+
 }
 
 #####################################################################
-# 文件改变时间检查
-# 检查特定目录下、在特定时间改变的文件
+# 文件改变检查
+#
 #####################################################################
-function FilesChangedTime() {
-	echo -e "\e[0;36mInput time e.g.\e[1;35mFeb 27\e[0;36m or \e[1;35mnext\e[0;36m to execute the next instruction.\033[0m"
-	echo -e "\e[1;32mPlease input month or next:\033[0m"
-	read monOfChg
-	while [[ "$monOfChg" != "next" ]]; do
-		echo -e "\e[1;32mPlease input day:\033[0m"
-		read dayOfChg
-		timeOfChg=`printf '%s%3i' $monOfChg $dayOfChg`
-		echo -e "\e[1;32mPlease input the path you want to check:\033[0m"
-		read PathChk
-		echo -e "\e[1;32mFiles that were changed on $timeOfChg\n\033[0m"
-		ls -al $PathChk | grep "$timeOfChg"
-		echo -e "\e[1;32mPlease input month:\033[0m"
-		read monOfChg
-	done
-	echo -e "\e[1;32mFiles changed time check finished.\033[0m"
+function FilesChanged() {
+	echo -e "\n\e[1;34mChecking files that are opened but have been deleted.\033[0m"
+	# drop the first line
+	delFileOpened=`lsof -nP +L1 2>/dev/null| grep '(deleted)' | grep -v 'chrome'`
+	while read line; do
+		IFS=" "
+		tmpArr=($line)
+		echo -e "\e[1;33mLow risk. Command: ${tmpArr[0]} PID: ${tmpArr[1]} User: ${tmpArr[2]} File path: ${tmpArr[9]}\033[0m"
+	done <<< "$delFileOpened"
+
+	echo -e "\n\e[1;34mChecking files that are changed in 7 days.\033[0m"
+	FilesCtime=`find /etc /bin /lib /sbin /dev /root/ /home /tmp /opt /var ! -path "/var/log*" ! -path "/var/spool/exim4*" ! -path "/var/backups*" -ctime -7 -type f 2>/dev/null| grep -v "\.log|cache|cache|vim|/share/|/lib/|.zsh|.gem|\.git|LICENSE|README|/_\w+\.\w+|\blogs\b|elasticsearch|nohup|i18n" | xargs -i{} ls -alh {} 2>/dev/null`
+	if [[ "$FilesCtime" == "" ]]; then
+		echo -e "\e[1;32mNormal. No files changed in 7 days\033[0m"
+	else
+		while read line; do
+			IFS=" "
+			tmpArr=($line)
+			echo -e "\e[1;33mLow risk. Changed time: ${tmpArr[5]} ${tmpArr[6]} File path: ${tmpArr[8]}\033[0m"
+		done <<< "$FilesCtime"
+	fi
 }
 
 #####################################################################
-# 检查网络进程
+# 检查使用CPU过多的进程
 #
 #####################################################################
 function ProcAnalyse() {
@@ -98,7 +102,7 @@ function ProcAnalyse() {
 #
 #####################################################################
 function HiddenProc() {
-	echo -e "\e[1;32mCheck hidden processes.\n\033[0m"
+	echo -e "\n\e[1;34mCheck hidden processes.\n\033[0m"
 	ps -ef | awk '{print}' | sort -n | uniq >tmp1
 	ls /proc | sort -n | uniq >tmp2
 	diff tmp1 tmp2
@@ -110,10 +114,22 @@ function HiddenProc() {
 # wget, ssh，ssh brute-force
 #####################################################################
 function HistoryCheck() {
-	echo -e "\n\e[1;34mmwget in sh history:\033[0m"
-	history | grep wget
-	echo -e "\n\e[1;34mssh in sh history:\033[0m"
-	history | grep ssh
+	echo -e "\n\e[1;34mwget in sh history:\033[0m"
+	tmpHistoryWget=`history | grep wget 2>/dev/null`
+	if [[ "$tmpHistoryWget" == "" ]]; then
+		echo -e "\e[1;32mNormal. No wget history found\033[0m"
+	else
+		echo -e "$tmpHistoryWget"
+	fi
+
+	echo -e "\n\e[1;34mSSH in sh history:\033[0m"
+	tmpHistorySSH=`history | grep ssh 2>/dev/null`
+	if [[ "$tmpHistorySSH" == "" ]]; then
+		echo -e "\e[1;32mNormal. No SSH history found\033[0m"
+	else
+		echo -e "$tmpHistorySSH"
+	fi
+
 	echo -e "\n\e[1;34mChecking ssh login brute-force:\033[0m"
 	loginTimes=`lastb | grep root | wc -l`
 	#loginTimes=51
@@ -183,15 +199,15 @@ function CronCheck() {
 #####################################################################
 function WebshellCheck() {
 	echo -e "\e[1;32mphp webshell:\033[0m"
-	find /var/www/ -name "*.php" |xargs egrep 'assert|phpspy|c99sh|milw0rm|eval|\(gunerpress|\(base64_decoolcode|spider_bc|shell_exec|passthru|\(\$\_\POST\[|eval \(str_rot13|\.chr\(|\$\{\"\_P|eval\(\$\_R|file_put_contents\(\.\*\$\_|base64_decode'
-	find /var/www/ -name "*.php" |xargs egrep '^(\xff\xd8|\x89\x50|GIF89a|GIF87a|BM|\x00\x00\x01\x00\x01)[\s\S]*<\?\s*php'
-	find /var/www/ -name "*.php" |xargs egrep '\$\s*(\w+)\s*=[\s\(\{]*(\$_(GET|POST|REQUEST|COOKIE)\[.{0,25});[\s\S]{0,200}\b(assert|eval|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec)\b[\/*\s]*\(+[\s"\/*]*(\$\s*\1|((base64_decode|gzinflate|gzuncompress|gzdecode|str_rot13)[\s\("]*\$\s*\1))'
-	find /var/www/ -name "*.php" |xargs egrep '\b(filter_var|filter_var_array)\b\s*\(.*FILTER_CALLBACK[^;]*((\$_(GET|POST|REQUEST|COOKIE|SERVER)\[.{0,25})|(eval|assert|ass\\x65rt|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec))'
-	find /var/www/ -name "*.php" |xargs egrep "\b(assert|eval|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec|include)\b\s*\(\s*(file_get_contents\s*\(\s*)?[\'\"]php:\/\/input"
+	find /var/www/ -name "*.php" |xargs egrep 'assert|phpspy|c99sh|milw0rm|eval|\(gunerpress|\(base64_decoolcode|spider_bc|shell_exec|passthru|\(\$\_\POST\[|eval \(str_rot13|\.chr\(|\$\{\"\_P|eval\(\$\_R|file_put_contents\(\.\*\$\_|base64_decode' 2>/dev/null
+	find /var/www/ -name "*.php" |xargs egrep '^(\xff\xd8|\x89\x50|GIF89a|GIF87a|BM|\x00\x00\x01\x00\x01)[\s\S]*<\?\s*php' 2>/dev/null
+	find /var/www/ -name "*.php" |xargs egrep '\$\s*(\w+)\s*=[\s\(\{]*(\$_(GET|POST|REQUEST|COOKIE)\[.{0,25});[\s\S]{0,200}\b(assert|eval|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec)\b[\/*\s]*\(+[\s"\/*]*(\$\s*\1|((base64_decode|gzinflate|gzuncompress|gzdecode|str_rot13)[\s\("]*\$\s*\1))' 2>/dev/null
+	find /var/www/ -name "*.php" |xargs egrep '\b(filter_var|filter_var_array)\b\s*\(.*FILTER_CALLBACK[^;]*((\$_(GET|POST|REQUEST|COOKIE|SERVER)\[.{0,25})|(eval|assert|ass\\x65rt|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec))' 2>/dev/null
+	find /var/www/ -name "*.php" |xargs egrep "\b(assert|eval|system|exec|shell_exec|passthru|popen|proc_open|pcntl_exec|include)\b\s*\(\s*(file_get_contents\s*\(\s*)?[\'\"]php:\/\/input" 2>/dev/null
 	echo -e "\e[1;32masp webshell:\033[0m"
-	find /var/www/ -name "*.asp" |xargs egrep '<%@codepage=65000[\s\S]*=936:|<%eval\srequest\(\"|<%@\sPage\sLanguage=\"Jscript\"[\s\S]*eval\(\w+\+|<%@.*eval\(Request\.Item'
+	find /var/www/ -name "*.asp" |xargs egrep '<%@codepage=65000[\s\S]*=936:|<%eval\srequest\(\"|<%@\sPage\sLanguage=\"Jscript\"[\s\S]*eval\(\w+\+|<%@.*eval\(Request\.Item' 2>/dev/null
 	echo -e "\e[1;32mjsp webshell:\033[0m"
-	find /var/www/ -name "*.jsp" |xargs egrep '<%@\spage\simport=[\s\S]*\\u00\d+\\u00\d+|<%@\spage\simport=[\s\S]*Runtime.getRuntime\(\).exec\(request.getParameter\(|Runtime.getRuntime\(\)'
+	find /var/www/ -name "*.jsp" |xargs egrep '<%@\spage\simport=[\s\S]*\\u00\d+\\u00\d+|<%@\spage\simport=[\s\S]*Runtime.getRuntime\(\).exec\(request.getParameter\(|Runtime.getRuntime\(\)' 2>/dev/null
 }
 
 #####################################################################
@@ -241,17 +257,17 @@ BasicCheck
 echo -e "\n\e[1;34m\n-----------------------------------------------"
 echo "Files check start"
 echo -e "-----------------------------------------------\033[0m\n"
-CertainFileTypeCheck
-FilesChangedTime
+SensitiveFileCheck
+FilesChanged
 
 echo -e "\n\e[1;34m\n-----------------------------------------------"
-echo "Net process check start"
+echo "Process check start"
 echo -e "-----------------------------------------------\033[0m\n"
 ProcAnalyse
 HiddenProc
 
 echo -e "\n\e[1;34m\n-----------------------------------------------"
-echo "History and log check start"
+echo "User and log check start"
 echo -e "-----------------------------------------------\033[0m\n"
 HistoryCheck
 UserAnalyse

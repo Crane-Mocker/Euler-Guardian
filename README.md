@@ -107,17 +107,33 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 `/tmp`下文件 `init.d`下services, `$PATH`
 
-#### 文件检查
+#### SensitiveFileCheck
 
-输入文件类型、指定目录，检查该目录下24h改变过的/有777权限的该类型文件
+敏感文件检查
 
-输入时间、指定目录，检查该目录下该时间改变过的文件
+加载到内核的不常见module->低危
+Module, Size, Used by
+
+
+#### FilesChanged
+
+被改变的文件检查
+
+文件打开，但是文件已被删除(除浏览器)->低危
+`COMMAND     PID USER   FD   TYPE DEVICE SIZE/OFF NLINK    NODE NAME`
+
+
+文件改变时间检查
+atime: access time, 在读取文件或者执行文件时更改的
+ctime: change time, 在写入文件、更改所有者、权限或链接设置时随Inode内容更改而更改
+mtime：modify time, 写入文件时更改
+
+7天之内，指定目录下ctime改变->低危
+
 
 #### 进程检查
 
-检查proc使用CPU的百分比。多余n%->低危
-
-输入PID, 查看详情
+检查proc使用CPU的百分比。多于n%->低危
 
 检查隐藏的process
 
