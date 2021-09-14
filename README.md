@@ -105,7 +105,12 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 #### 基本检查
 
-`/tmp`下文件 `init.d`下services, `$PATH`
+- systemd-resolve
+systemd-resolve 是 Ubuntu 下 DNS 解析相关的命令，能使用它来操作 DNS 相关的功能。
+- avahi
+Zero configuration networking(zeroconf)零配置网络服务规范，是一种用于自动生成可用IP地址的网络技术，不需要额外的手动配置和专属的配置服务器。
+Avahi 是Zeroconf规范的开源实现，常见使用在Linux上。包含了一整套多播DNS(multicastDNS)/DNS-SD网络服务的实现。
+
 
 #### SensitiveFileCheck
 
@@ -124,9 +129,9 @@ Module, Size, Used by
 
 
 文件改变时间检查
-atime: access time, 在读取文件或者执行文件时更改的
-ctime: change time, 在写入文件、更改所有者、权限或链接设置时随Inode内容更改而更改
-mtime：modify time, 写入文件时更改
+- atime: access time, 在读取文件或者执行文件时更改的
+- ctime: change time, 在写入文件、更改所有者、权限或链接设置时随Inode内容更改而更改
+- mtime：modify time, 写入文件时更改
 
 7天之内，指定目录下ctime改变->低危
 
