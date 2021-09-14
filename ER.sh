@@ -3,7 +3,7 @@
 # Author: Anaïs Huang
 # mail: anaishuangc0conut@gmail.com
 # Created Time: Sat 07 Aug 2021 06:31:58 PM CST
-# 应急响应 自动分析
+# emergency response, automatic analysis
 #########################################################################
 #!/bin/bash
 
@@ -50,8 +50,6 @@ function SensitiveFileCheck() {
 			echo -e "\e[1;33mLow risk. Module: ${tmpArr[0]}\033[0m"
 		done <<< "$unusualMod"
 	fi
-
-
 }
 
 #####################################################################
@@ -117,7 +115,6 @@ function HiddenProc() {
 
 	psPIDList=()
 	psPID=`ps -ef 2>/dev/null | awk 'NR>1{print $2}'`
-	#psPID=`echo -e "1\n2\n3\n4\n"`
 	for eachPID in $psPID; do
 		psPIDList[${#psPIDList[*]}]=$eachPID
 	done
@@ -125,7 +122,6 @@ function HiddenProc() {
 
 	procPIDList=()
 	procPID=`ls /proc/ | grep ^[0-9]`
-	#procPID=`echo -e "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"`
 	for eachPID in $procPID; do
 		procPIDList[${#procPIDList[*]}]=$eachPID
 	done
@@ -169,10 +165,8 @@ function HistoryCheck() {
 
 	echo -e "\n\e[1;34mChecking ssh login brute-force:\033[0m"
 	loginTimes=`lastb | grep root | wc -l`
-	#loginTimes=51
 	if [ $loginTimes -gt 50 ]; then
 		loginIPs=`lastb | grep root | awk '{print $3}' | sort | uniq 2>/dev/null`
-		#loginIPs=`echo -e "220.181.38.148"`
 		echo -e "\e[1;31mHigh risk. These IPs tried to login as root:\n$loginIPs\033[0m"
 		echo -e "\e[0;35mSuggestion: Add unauthorized IPs to blacklist\033[0m"
 	else
@@ -190,7 +184,6 @@ function HistoryCheck() {
 function UserAnalyse() {
 	echo -e "\n\e[1;34mChecking user UID=0.\033[0m"
 	rootUsers=`awk -F: '{if($3==0)print $1}' /etc/passwd`
-	#rootUsers=`echo -e "root\nadmin\nelse"`
 	for eachUser in $rootUsers; do
 		if [[ "$eachUser" == "root" ]]; then
 			echo -e "\e[1;32mNormal. Found root user: $eachUser\033[0m"
@@ -201,8 +194,6 @@ function UserAnalyse() {
 
 	echo -e "\n\e[1;34mChecking user without password.\033[0m"
 	pwUsers=`awk -F: 'length($2)==0 {print $1}' /etc/shadow 2>/dev/null`
-	#pwUsers=`echo -e "admin\nelse"`
-	#echo "$pwUserss"
 	if [[ "$pwUsers" == "" ]]; then
 		echo -e "\e[1;32mNormal. Did not find user without password.\033[0m"
 	else
@@ -250,7 +241,6 @@ function CronCheck() {
 	tmp=""
 	for (( i = 0; i < ${#cronFileList[*]}; i++ )); do
 		tmp=`cat ${cronFileList[i]} | grep '((?:useradd|groupadd|chattr)|(?:wget\s|curl\s|tftp\s\-i|scp\s|sftp\s)|(?:bash\s\-i|fsockopen|nc\s\-e|sh\s\-i|\"/bin/sh\"|\"/bin/bash\"))' 2>/dev/null`
-		#tmp=1
 		if [[ "$tmp" != "" ]]; then
 			echo -e "\e[1;31mHigh risk. Found cron backdoor: ${cronFileList[i]}\033[0m"
 		fi

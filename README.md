@@ -103,7 +103,13 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 详见代码注释
 
-#### 基本检查
+#### BasicCheck
+
+基本检查
+
+1. iptables防火墙规则
+
+2. 开放的TCP, UDP端口
 
 - systemd-resolve
 systemd-resolve 是 Ubuntu 下 DNS 解析相关的命令，能使用它来操作 DNS 相关的功能。
@@ -111,50 +117,75 @@ systemd-resolve 是 Ubuntu 下 DNS 解析相关的命令，能使用它来操作
 Zero configuration networking(zeroconf)零配置网络服务规范，是一种用于自动生成可用IP地址的网络技术，不需要额外的手动配置和专属的配置服务器。
 Avahi 是Zeroconf规范的开源实现，常见使用在Linux上。包含了一整套多播DNS(multicastDNS)/DNS-SD网络服务的实现。
 
+3. init.d services
+
+4. `$PATH`
 
 #### SensitiveFileCheck
 
 敏感文件检查
 
-加载到内核的不常见module->低危
-Module, Size, Used by
+1. 检查加载到内核的不常见module
 
+tmpArr[]:
+|0|1|2|
+|---|---|---|
+|Module|Size|Used by|
 
 #### FilesChanged
 
 被改变的文件检查
 
-文件打开，但是文件已被删除(除浏览器)->低危
-`COMMAND     PID USER   FD   TYPE DEVICE SIZE/OFF NLINK    NODE NAME`
+1. 文件打开，但是文件已被删除(除浏览器)
+
+tmpArr[]
+|0|1|2|3|4|5|6|7|8|9|
+|---|---|---|---|---|---|---|---|---|---|
+|COMMAND|PID|USER|FD|TYPE|DEVICE|SIZE/OFF|NLINK|NODE|NAME|
 
 
-文件改变时间检查
+2. 文件改变时间检查
+
+检查7天之内，指定目录下ctime改变
+
 - atime: access time, 在读取文件或者执行文件时更改的
 - ctime: change time, 在写入文件、更改所有者、权限或链接设置时随Inode内容更改而更改
 - mtime：modify time, 写入文件时更改
 
-7天之内，指定目录下ctime改变->低危
+#### ProcAnalyse
 
+进程检查
 
-#### 进程检查
+检查proc使用CPU的百分比是否多于n%
 
-检查proc使用CPU的百分比。多于n%->低危
+#### HiddenProc
 
-检查隐藏的process
+检查隐藏的process, 并按升序排序
 
 #### HistoryCheck
 
-检查history中wget
-检查history中ssh
-ssh root登录失败>50 -> ip可能为爆破ssh的IP
+1. 检查history中wget
+
+2. 检查history中ssh
+
+3. 检查是否有ssh的root用户口令爆破
+
+#### UserAnalyse
+
+1. 检查有root权限的用户是否为root
+
+2. 检查空口令用户
+
+3. 可登陆用户
+
+4. 所有用户的上次登录情况
+
+#### CronCheck
+
+1. root的crontab files检查
+
+2. cron后门检查
 
 #### webshell检查
 
 基于文件的webshell检查, 支持php asp jsp
-
-#### UserAnalyse
-
-提示信息+输出(是否危险)+修复建议
-
-检查有root权限的用户，若不为root->高危。
-检查空口令用户->高危。
