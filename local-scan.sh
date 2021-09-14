@@ -11,12 +11,15 @@
 
 #######################################################################
 # pre operations
-# 1.current id check，check if current id has root perms
-# 2.check SetUID, get pwd
-# 3.check if there are results files left from previous scan,
-# if so, delete them
+# 1. generate timeStamp
+# 2. current id check，if UID=0. Can only run as root.
+# 3. check SetUID
+# 4. delete files left from previous scan
 #######################################################################
 function PreOp() {
+
+	timeStamp=`date "+%s"`
+
 	local CurrentId=""
 	if [ -x /usr/xpg4/bin/id ]; then #Solaris
 		CurrentId=$(/usr/xpg4/bin/id -u 2>/dev/null)
@@ -28,19 +31,15 @@ function PreOp() {
 
 	#check if UID = 0(root)
 	if [ ${CurrentId} -eq 0 ]; then
-		IsRoot=1
-		ScanMode=0
-	else
-		IsRoot=0
-		ScanMode=1
+		echo -e "Should run as root!\nExit."
+		exit
 	fi
 
 	#check SetUID ("s")
 	if [ -u "$0" ]; then
 		echo -e "\e[0;36mStopped because of unusual SetUID. Exit.\n\033[0m"
-		exit 1
+		exit
 	fi
-	WorkDir=$(pwd)
 
 	rm oscap* res/s.txt 2>/dev/null
 }
@@ -345,7 +344,6 @@ function Function {
 #  create report
 #####################################################################
 function reportHead() {
-	dateStamp=`date "+%s"`
 
 	echo "<!DOCTYPE html>
 	<html lang='en' dir='ltr'>
@@ -356,13 +354,13 @@ function reportHead() {
 			<link rel='stylesheet' href='normalize.css'>
 			<title></title>
 		</head>
-		<body>" > ./report/${dateStamp}_EG_report.html
+		<body>" > ./report/${timeStamp}_EG_report.html
 }
 
 function reportFoot() {
-	dateStamp2Date=`date -d @${dateStamp}`
-	echo "<div>$dateStamp2Date</div>
-	</body></html>" >> ./report/${dateStamp}_EG_report.html
+	timeStamp2Date=`date -d @${timeStamp}`
+	echo "<div>$timeStamp2Date</div>
+	</body></html>" >> ./report/${timeStamp}_EG_report.html
 }
 
 ###################################################################
@@ -387,24 +385,38 @@ echo -e "Welcome to use Euler Guardian!"
 echo "This is the local scan module."
 echo -e "-----------------------------------------------\033[0m"
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+# parameter process
+# -h
+if [[ $1 == "--help" ]]||[[ $1 == "-h" ]]; then
+	echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h, --help\t help\n\t-s, --silent\t Do not display details"
+# -s
+elif [[ $1 == "--silent" ]]||[[ $1 == "-s" ]]; then
+	isSilent=1
+	echo -e "Silent mode is chosen."
+# no param
+else
+	isSilent=0
+	echo -e "Silent mode is not chosen."
+fi
+
+echo -e "\e[1;34m-----------------------------------------------"
 echo "System information check start"
-echo -e "-----------------------------------------------\033[0m\n"
+echo -e "-----------------------------------------------\033[0m"
 PreOp
 SysInfoChk
 SecCheck
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\e[1;34m-----------------------------------------------"
 echo "Users information check start"
-echo -e "-----------------------------------------------\033[0m\n"
+echo -e "-----------------------------------------------\033[0m"
 UserInfoChk
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\e[1;34m-----------------------------------------------"
 echo "Files permissions check start"
-echo -e "-----------------------------------------------\033[0m\n"
+echo -e "-----------------------------------------------\033[0m"
 FilePermChk
 
-echo -e "\e[1;34m\n-----------------------------------------------"
+echo -e "\e[1;34m-----------------------------------------------"
 echo "Software vuln check start"
-echo -e "-----------------------------------------------\033[0m\n"
+echo -e "-----------------------------------------------\033[0m"
 OVALChk

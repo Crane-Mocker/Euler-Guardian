@@ -44,6 +44,7 @@ gitlab 地址：
 |yellow|low risk|
 |red|high risk|
 |purple|suggesion to repair|
+
 ## css
 
 初始化CSS来自：
