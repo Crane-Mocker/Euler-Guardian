@@ -204,3 +204,15 @@ tmpArr[]
 ![ER-7](pic/ER-7.png)
 
 基于文件的webshell检查, 支持php asp jsp
+
+## Reference
+
+- [Lynis](https://cisofy.com/documentation/lynis/)
+- [Vulmap](https://github.com/vulmon/Vulmap)
+- [Nix Auditor](https://github.com/XalfiE/Nix-Auditor)
+- [GScan](https://github.com/grayddq/GScan)
+- wooyun: Linux服务器应急事件溯源报告
+- 黑客入侵应急分析手工排查
+- 安恒: 勒索病毒应急与响应手册
+- 绿盟: 应急响应技术指南
+- 等保2.0: GBT25070-2019信息安全技术网络安全等级保护安全设计技术要求

@@ -1,6 +1,5 @@
 *.xml
 *.html
-s.txt
 res/*
 report/*
 test*
