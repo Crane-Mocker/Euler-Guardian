@@ -11,7 +11,7 @@ gitlab 地址：
 <!-- vim-markdown-toc GFM -->
 
 * [配色](#配色)
-* [css](#css)
+* [front end 前端](#front-end-前端)
 * [模块说明](#模块说明)
 	* [local scan 本地扫描模块](#local-scan-本地扫描模块)
 		* [PreOp 预操作](#preop-预操作)
@@ -104,6 +104,8 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 基本检查
 
+![ER-0](pic/ER-0.png)
+
 1. iptables防火墙规则
 
 2. 开放的TCP, UDP端口
@@ -122,6 +124,8 @@ Avahi 是Zeroconf规范的开源实现，常见使用在Linux上。包含了一�
 
 敏感文件检查
 
+![ER-1](pic/ER-1.png)
+
 1. 检查加载到内核的不常见module
 
 tmpArr[]:
@@ -133,6 +137,8 @@ tmpArr[]:
 #### FilesChanged
 
 被改变的文件检查
+
+![ER-2](pic/ER-2.png)
 
 1. 文件打开，但是文件已被删除(除浏览器)
 
@@ -155,6 +161,8 @@ tmpArr[]
 
 进程检查
 
+![ER-3](pic/ER-3.png)
+
 检查proc使用CPU的百分比是否多于n%
 
 #### HiddenProc
@@ -163,6 +171,8 @@ tmpArr[]
 
 #### HistoryCheck
 
+![ER-4](pic/ER-4.png)
+
 1. 检查history中wget
 
 2. 检查history中ssh
@@ -170,6 +180,8 @@ tmpArr[]
 3. 检查是否有ssh的root用户口令爆破
 
 #### UserAnalyse
+
+![ER-5](pic/ER-5.png)
 
 1. 检查有root权限的用户是否为root
 
@@ -181,10 +193,14 @@ tmpArr[]
 
 #### CronCheck
 
+![ER-6](pic/ER-6.png)
+
 1. root的crontab files检查
 
 2. cron后门检查
 
 #### WebshellCheck
+
+![ER-7](pic/ER-7.png)
 
 基于文件的webshell检查, 支持php asp jsp
