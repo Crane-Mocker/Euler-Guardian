@@ -21,11 +21,13 @@ function PreOp() {
 	timeStamp=`date "+%s"`
 
 	local CurrentId=""
-	if [ -x /usr/xpg4/bin/id ]; then #Solaris
+	#Solaris
+	if [ -x /usr/xpg4/bin/id ]; then
 		CurrentId=$(/usr/xpg4/bin/id -u 2>/dev/null)
 	elif [ "$(uname)" = "SunOS" ]; then
 		CurrentId=$(id | tr '=' ' ' | tr '(' ' ' | awk '{ print $2 }' 2>/dev/null)
-	else #"$(uname)" = "Linux", for Euler, ubuntu, etc
+	#"$(uname)" = "Linux", for Euler, ubuntu, etc
+	else
 		CurrentId=$(id -u 2>/dev/null)
 	fi
 
@@ -37,7 +39,7 @@ function PreOp() {
 
 	#check SetUID ("s")
 	if [ -u "$0" ]; then
-		echo -e "\e[0;36mStopped because of unusual SetUID. Exit.\n\033[0m"
+		echo -e "\e[0;31mStopped because of unusual SetUID. Exit.\n\033[0m"
 		exit
 	fi
 
@@ -46,33 +48,31 @@ function PreOp() {
 
 ########################################################################
 # system info check
-# kernel info, detailed kernel info, release info
+# 1. basic info: OS and its version, kernel and its version,
+# platform
 ########################################################################
 function SysInfoChk() {
-	# kernel info
-	local UnameInfo=`uname -a 2>/dev/null`	#`uname -a`
-	if [ "$UnameInfo" ]; then
-		# standard output and add to $report
-		echo -e "\e[1;34mKernel info:\e[00m\n$UnameInfo\n\033[0m" |tee -a $report 2>/dev/null
-	else
-		echo -e "\e[0;36mUname failed.\n\033[0m" |tee -a $report 2>/dev/null
-	fi
+	tmpStr=`cat /etc/*-release | grep ^NAME=`
+	IFS='"'
+	read -ra tmpArr <<<"$tmpStr"
+	tmpStr1=${tmpArr[1]}
+	releaseNameStr=${tmpStr1,,}
+	#echo "$releaseNameStr"
 
-	# kernel version, gcc version to compile, time of compilation
-	local KernelVersion=`cat /proc/version 2>/dev/null`
-	if [ "$KernelVersion" ]; then
-		echo -e "\e[1;34mKernel version:\e[00m\n$KernelVersion\n\033[0m" |tee -a $report 2>/dev/null
-	else
-		echo -e "\e[0;36mcat /proc/version failed.\n\033[0m"|tee -a $report 2>/dev/null
-	fi
+	# release version id
+	tmpStr=`cat /etc/*-release | grep VERSION_ID 2>/dev/null`
+	IFS='"'
+	read -ra tmpArr <<<"$tmpStr"
+	releaseVersionID=${tmpArr[1]}
+	releaseVersionIDStr=`echo ${releaseVersionID//./}`
+	echo -e "\e[1;34mOS:\033[0m $releaseNameStr $releaseVersionID"
 
-	#release info
-	local ReleaseInfo=`cat /etc/*-release 2>/dev/null`
-	if [ "$ReleaseInfo" ]; then
-		echo -e "\e[1;34mrelease info:\e[00m\n$ReleaseInfo\n\033[0m" |tee -a $report 2>/dev/null
-	else
-		echo -e "\e[0;36mcat /etc/*-release failed.\n\033[0m"|tee -a $report 2>/dev/null
-	fi
+	local kernelName=`uname -s 2>/dev/null`
+	local kernelRelease=`uname -r 2>/dev/null`
+	echo -e "\e[1;34mKernel:\033[0m $kernelName $kernelRelease"
+	local hardwareP=`uname -i`
+	echo -e "\e[1;34mPlatform:\033[0m $hardwareP"
+
 }
 
 ####################################################################
@@ -86,7 +86,7 @@ function SecCheck() {
 		echo -e "\e[1;34mSElinux status:\n\033[0m"
 		cat /etc/selinux/config | grep SELINUX=
 	else
-		echo -e "\e[0;36mNo SELinux found.\n\033[0m"|tee -a $report 2>/dev/null
+		echo -e "\e[0;36mNo SELinux found.\n\033[0m" 2>/dev/null
 	fi
 
 	# limitations of resources
@@ -118,17 +118,17 @@ function UserInfoChk() {
 	# hostname
 	local Hostname=`hostname 2>/dev/null`
 	if [ "$Hostname" ]; then
-		echo -e "\e[1;34mHostname:\e[00m\n$Hostname\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mHostname:\e[00m\n$Hostname\n\033[0m" 2>/dev/null
 	else
-		echo -e "\e[0;36mhostname failed.\n\033[0m"|tee -a $report 2>/dev/null
+		echo -e "\e[0;36mhostname failed.\n\033[0m" 2>/dev/null
 	fi
 
 	#id
 	local Id=`id 2>/dev/null`
 	if [ "$Id" ]; then
-		echo -e "\e[1;34mCurrent user and group IDs:\e[00m\n$Id\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mCurrent user and group IDs:\e[00m\n$Id\n\033[0m" 2>/dev/null
 	else
-		echo -e "\e[0;36mid failed.\n\033[0m"|tee -a $report 2>/dev/null
+		echo -e "\e[0;36mid failed.\n\033[0m" 2>/dev/null
 	fi
 
 	#user accounts info
@@ -136,31 +136,31 @@ function UserInfoChk() {
 	if [ "$Passwd" ]; then
 		echo -e "\e[1;34mUsers and permissions:\033[0m"
 		echo -e "\e[0;34mUsername:Password:UID:GID\033[0m"
-		echo -e "\e[00m$Passwd\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[00m$Passwd\n\033[0m" 2>/dev/null
 		#group memebership
 		local GroupIdInfo=`for i in $(cat /etc/passwd 2>/dev/null| cut -d":" -f1 2>/dev/null);do id $i;done 2>/dev/null`
 		if [ "$GroupIdInfo" ]; then
-			echo -e "\e[1;34mGroup memberships:\e[00m\n$GroupIdInfo\n\033[0m" |tee -a $report 2>/dev/null
+			echo -e "\e[1;34mGroup memberships:\e[00m\n$GroupIdInfo\n\033[0m" 2>/dev/null
 		else
 			:
 		fi
 		#if password stored in /etc/passwd as hash
 		local HashPw=`grep -v '^[^:]*:[x]' /etc/passwd 2>/dev/null`
 		if [ "$HashPw" ]; then
-			echo -e "\e[1;34mFound password stored in /etc/passwd as hash:\n\033[0m$HashPw\n" | tee -a $report 2>/dev/null
+			echo -e "\e[1;34mFound password stored in /etc/passwd as hash:\n\033[0m$HashPw\n" 2>/dev/null
 		else
-			echo -e "\e[0;34mNo password is stored in /etc/passwd as hash.\n\033[0m" |tee -a $report 2>/dev/null
+			echo -e "\e[0;34mNo password is stored in /etc/passwd as hash.\n\033[0m" 2>/dev/null
 		fi
 	else
-		echo -e "\e[0;36m cat /etc/passwd failed.\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[0;36m cat /etc/passwd failed.\n\033[0m" 2>/dev/null
 	fi
 
 	#last log for each user
 	local LastLogUser=`lastlog 2>/dev/null | grep -v "Never"`
 	if [ "$LastLogUser" ]; then
-		echo -e "\e[1;34mUsers previously logged onto system:\e[0m\n$LastLogUser\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mUsers previously logged onto system:\e[0m\n$LastLogUser\n\033[0m" 2>/dev/null
 	else
-		echo -e "\e[0;36mCan't find /var/log/lastlog.\n\033[0m"|tee -a $report 2>/dev/null
+		echo -e "\e[0;36mCan't find /var/log/lastlog.\n\033[0m" 2>/dev/null
 	fi
 }
 
@@ -255,23 +255,23 @@ function OVALChk() {
 	# install oscap
 	if [ "$(apt -v 2>/dev/null)" ]; then
 		# use apt
-		echo -e "\e[1;34mThis device uses apt.\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mThis device uses apt.\n\033[0m" 2>/dev/null
 		# if oscap is installed
 		if [ "$(oscap -h 2>/dev/null)" ]; then
 			:
 		else
-			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" |tee -a $report 2>/dev/null
+			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" 2>/dev/null
 			sudo apt-get install libopenscap8
 		fi
 	elif [ "$(yum --version 2>/dev/null)" ]; then
 		# use yum
-		echo -e "\e[1;34mThis device uses yum.\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mThis device uses yum.\n\033[0m" 2>/dev/null
 
 		# if oscap is installed
 		if [ "$(oscap -h 2>/dev/null)" ]; then
 			:
 		else
-			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" |tee -a $report 2>/dev/null
+			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" 2>/dev/null
 			sudo yum install openscap-utils -y
 		fi
 	fi
@@ -297,9 +297,9 @@ function OVALChk() {
 	#echo "$targetOVALFile"
 	hasOVALFile=`ls | grep ${targetOVALFile} 2>/dev/null`
 	if [ "$hasOVALFile" ]; then
-		echo -e "\e[1;34mOVAL file found:\e[00m\n$targetOVALFile\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[1;34mOVAL file found:\e[00m\n$targetOVALFile\n\033[0m" 2>/dev/null
 	else
-		echo -e "\e[0;36mNo target OVALFile found. Downloading...\n\033[0m" |tee -a $report 2>/dev/null
+		echo -e "\e[0;36mNo target OVALFile found. Downloading...\n\033[0m" 2>/dev/null
 		wget -q https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/${targetOVALFile}
 		hasOVALFile=`ls | grep ${targetOVALFile} 2>/dev/null`
 		if [ "$hasOVALFile" ]; then
@@ -312,7 +312,7 @@ function OVALChk() {
 	fi
 
 	oscap oval eval --results ./oscap_results.xml --report ./report/oscap_report.html ${targetOVALFile}
-	echo -e "\e[1;34mPlease check for vuln scan results in oscap_results.xml and oscap_report.html\n\033[0m" |tee -a $report 2>/dev/null
+	echo -e "\e[1;34mPlease check for vuln scan results in oscap_results.xml and oscap_report.html\n\033[0m" 2>/dev/null
 }
 
 
@@ -343,7 +343,7 @@ function Function {
 #####################################################################
 #  create report
 #####################################################################
-function reportHead() {
+function ReportHead() {
 
 	echo "<!DOCTYPE html>
 	<html lang='en' dir='ltr'>
@@ -357,20 +357,11 @@ function reportHead() {
 		<body>" > ./report/${timeStamp}_EG_report.html
 }
 
-function reportFoot() {
+function ReportFoot() {
 	timeStamp2Date=`date -d @${timeStamp}`
 	echo "<div>$timeStamp2Date</div>
 	</body></html>" >> ./report/${timeStamp}_EG_report.html
 }
-
-###################################################################
-# myFunction
-###################################################################
-
-#function myFunction() {
-#	local myLocalVar=
-#	:
-#}
 
 #####################################################################
 #  Program Starts
@@ -393,7 +384,7 @@ if [[ $1 == "--help" ]]||[[ $1 == "-h" ]]; then
 elif [[ $1 == "--silent" ]]||[[ $1 == "-s" ]]; then
 	isSilent=1
 	echo -e "Silent mode is chosen."
-# no param
+# no param or wrong param
 else
 	isSilent=0
 	echo -e "Silent mode is not chosen."

@@ -1,0 +1,39 @@
+.each-part{
+    text-align: center;
+    padding:55px 30px 60px;
+    border-radius: 3px;
+    margin-bottom: 30px;
+    border: 1px solid #dadfe9;
+    -webkit-transition: .3s linear;
+    -moz-transition:.3s linear;
+    -ms-transition:.3s linear;
+    -o-transition:.3s linear;
+    transition: .3s linear;
+}
+.each-part h2 a {
+    font-size:20px;
+    margin: 35px 0 20px;
+}
+.each-part h2 a span {text-transform:  lowercase;}
+.each-part p {padding-bottom: 35px;text-transform: initial;position: relative;}
+.each-part p:before {
+    position: absolute;
+    content: "";
+    width: 20px;
+    height: 3px;
+    background: #3030ea;
+    bottom: 0;
+    left: 50%;
+    margin-left: -10px;
+}
+.each-part:hover .each-part:hover,.each-part:hover
+.each-part:hover h2 a,.each-part:hover p{color: #fff;}
+.each-part:hover  p:before {background: #fff;}
+.each-part:hover{box-shadow: 0 12px 30px 0px rgba(0,1,193,.2);background: #4e4ffa;border: 1px solid #4e4ffa;}
+
+@media screen and (max-width:767px){
+	.each-part {max-width: 350px;margin: 30px auto;}
+}
+@media screen and (max-width: 399px){
+	.each-part h2 a {line-height: 1.5;}
+}

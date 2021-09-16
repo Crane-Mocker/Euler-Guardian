@@ -45,7 +45,7 @@ gitlab 地址：
 |red|high risk|
 |purple|suggesion to repair|
 
-## css
+## front end 前端
 
 初始化CSS来自：
 https://necolas.github.io/normalize.css/8.0.1/normalize.css
@@ -98,7 +98,7 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 ### ER emergency response 应急响应模块
 
-详见代码注释
+使用场景: Linux受到入侵后的自动化快速应急响应。
 
 #### BasicCheck
 
