@@ -18,6 +18,7 @@ gitlab 地址：
 		* [SysInfoChk 系统信息检查](#sysinfochk-系统信息检查)
 		* [SecCheck 安全策略检查](#seccheck-安全策略检查)
 		* [UserInfoChk 用户信息检查](#userinfochk-用户信息检查)
+		* [UserIdenChk 用户身份检查](#useridenchk-用户身份检查)
 		* [FilePermChk 文件权限检查](#filepermchk-文件权限检查)
 		* [OVALChk 软件包版本漏洞检查](#ovalchk-软件包版本漏洞检查)
 		* [Function 函数调用](#function-函数调用)
@@ -31,6 +32,7 @@ gitlab 地址：
 		* [UserAnalyse](#useranalyse)
 		* [CronCheck](#croncheck)
 		* [WebshellCheck](#webshellcheck)
+* [Reference](#reference)
 
 <!-- vim-markdown-toc -->
 
@@ -77,6 +79,48 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 检查用户信息。
 
 检查hostname和id, 检查口令是否以hash存储，检查上一次登录的用户。
+
+#### UserIdenChk 用户身份检查
+
+口令配置（时效+复杂度）
+
+![LS-UserIdenChk](pic/LS-UserIdenChk.png)
+
+1.口令有效期 PASS_MAX_DAYS
+
+2.距上次更改口令后，最短多长时间可以再次更改 PASS_MIN_DAYS
+
+3.口令最小长度 PASS_MIN_LEN
+
+4.口令到期前多少天通知 PASS_WARN_AGE
+
+5.口令已使用的时间
+
+(to do)
+
+2种计算方式
+
+- 对于CentOS系，利用change`change -l [user]`
+
+- `/etc/shadow`
+https://blog.csdn.net/xiezuoyong/article/details/49890695
+
+6.PAM的cracklib模块提供口令复杂度控制
+
+**auth**类接口对用户身份进行识别认证
+
+`pam_env.so`定义用户登录之后的环境变量
+`pam_unix.so`提示用户输入口令，并与/etc/shadow进行对比
+`pam_succeed_if.so`限制登录条件。在Linux系统中，一般系统用户的uid都在500之内，`uid >= 500 quiet`表示允许uid >= 500的用户登录，即使用useradd命令以及默认选项建立的普通用户直接由本地控制台登录系统。
+`pam_deny.so`拒绝不匹配任何规则的登录
+
+**password**接口确认用户使用的口令的合法性
+
+|retry|difok|minlen|ucredit|lcredit|dcredit|dictpath|
+|---|---|---|---|---|---|
+|尝试次数|最少不同字符|最小口令长度|最少大写字母|最少小写字母|最少数字|密码字典路径|
+
+7.空口令用户检查
 
 #### FilePermChk 文件权限检查
 

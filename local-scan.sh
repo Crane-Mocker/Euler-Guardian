@@ -132,7 +132,7 @@ function UserInfoChk() {
 	fi
 
 	#user accounts info
-	local Passwd=`cat /etc/passwd | cut -d ":" -f 1,2,3,4 2>/dev/null`
+	local Passwd=`cat /etc/passwd 2>/dev/null | cut -d ":" -f 1,2,3,4 2>/dev/null`
 	if [ "$Passwd" ]; then
 		echo -e "\e[1;34mUsers and permissions:\033[0m"
 		echo -e "\e[0;34mUsername:Password:UID:GID\033[0m"
@@ -164,6 +164,112 @@ function UserInfoChk() {
 	fi
 }
 
+########################################################################
+# user identity
+# hostname, id, user accounts info, if passwords are stored as hash,
+# last login
+########################################################################
+function UserIdenChk() {
+	# basic password configuration
+	local pwMaxDay=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_MAX_DAYS 2>/dev/null| egrep ^[0-9]`
+	local pwMinDay=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_MIN_DAYS 2>/dev/null| egrep ^[0-9]`
+	local pwMinLen=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_MIN_LEN 2>/dev/null| egrep ^[0-9]`
+	local pwWarnAge=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_WARN_AGE 2>/dev/null| egrep ^[0-9]`
+
+	if [[ "$pwMaxDay" == "" ]] || [[ $pwMaxDay -eq 99999 ]]; then
+		echo -e "\e[1;33mLow risk. No limitation of password expired days\033[0m"
+	else
+		echo -e "\e[1;32mNormal.\e[1;34mDays for a password to expire:\033[0m $pwMaxDay"
+	fi
+
+	if [[ "$pwMinDay" == "" ]]; then
+		echo -e "\e[1;33mLow risk. No limitation of days to wait after last change of password\033[0m"
+	else
+		echo -e "\e[1;32mNormal.\e[1;34mMin days to wait after last change of password:\033[0m $pwMinDay"
+	fi
+
+	if [[ "$pwMinLen" == "" ]]; then
+		echo -e "\e[1;33mLow risk. No limitation of password min length\033[0m"
+	else
+		echo -e "\e[1;32mNormal.\e[1;34mMin length of password:\033[0m $pwMinLen"
+	fi
+
+	if [[ "$pwWarnAge" == "" ]]; then
+		echo -e "\e[1;33mLow risk. Did not set a date to get warning before password expiration\033[0m"
+	else
+		echo -e "\e[1;32mNormal.\e[1;34mDays to receive warning before password expiration:\033[0m $pwWarnAge"
+	fi
+
+	#pam password config
+	local pamCracklib=`cat /etc/pam.d/system-auth 2>/dev/null | grep pam_cracklib.so 2>/dev/null`
+	if [[ "$pamCracklib" == "" ]]; then
+		echo -e "\e[1;33mLow risk. Cracklib did not find"
+	else
+		local pamRetry=`echo $pamCracklib | grep -oE 'retry=[1-9]' 2>/dev/null`
+		if [[ "$pamRetry" == "" ]]; then
+			pamRetry="Not set"
+		else
+			pamRetry=${pamRetry#*=}
+		fi
+		#echo "pamRetry $pamRetry"
+		local pamDifok=`echo $pamCracklib | grep -oE 'difok=[1-9]' 2>/dev/null`
+		if [[ "$pamDifok" == "" ]]; then
+			pamDifok="Not set"
+		else
+			pamDifok=${pamDifok#*=}
+		fi
+		#echo "pamDifok $pamDifok"
+		local pamMinLen=`echo $pamCracklib | grep -oE 'minlen=[1-9]' 2>/dev/null`
+		if [[ "$pamMinLen" == "" ]]; then
+			pamMinLen="Not set"
+		else
+			pamMinLen=${pamMinLen#*=}
+		fi
+		#echo "pamMinLen $pamMinLen"
+		local pamUcredit=`echo $pamCracklib | grep -oE 'ucredit=-[1-9]' 2>/dev/null`
+		if [[ "pamUcredit" == "" ]]; then
+			pamUcredit="Not set"
+		else
+			pamUcredit=${pamUcredit#*-}
+		fi
+		#echo "pamUcredit $pamUcredit"
+		local pamLcredit=`echo $pamCracklib | grep -oE 'lcredit=-[1-9]' 2>/dev/null`
+		if [[ "$pamLcredit" == "" ]]; then
+			pamLcredit="Not set"
+		else
+			pamLcredit=${pamLcredit#*-}
+		fi
+		#echo "pamLcredit $pamLcredit"
+		local pamDcredit=`echo $pamCracklib | grep -oE 'dcredit=-[1-9]' 2>/dev/null`
+		if [[ "$pamDcredit" == "" ]]; then
+			pamDcredit="Not set"
+		else
+			pamDcredit=${pamDcredit#*-}
+		fi
+		#echo "pamDcredit $pamDcredit"
+		local pamDictPath=`echo $pamCracklib | grep -oE 'dictpath=*' 2>/dev/null`
+		if [[ "$pamDictPath" == "" ]]; then
+			pamDictPath="Not set"
+		else
+			pamDictPath=${pamDictPath#*=}
+		fi
+		#echo "pamDictPath $pamDictPath"
+		echo -e "\e[1;32mNormal. Cracklib found.\033[0m"
+		echo -e "\e[0;32mRetry times: $pamRetry\tMin num of different chars: $pamDifok\nMin length of password: $pamMinLen\tMin num of upper case chars: $pamUcredit\nMin num of lower case chars: $pamLcredit\tMin num of numbers: $pamDcredit\nPassword dictionary path: $pamDictPath\033[0m"
+	fi
+
+	# user without password
+	echo -e "\n\e[1;34mChecking user without password.\033[0m"
+	local pwUsers=`awk -F: 'length($2)==0 {print $1}' /etc/shadow 2>/dev/null`
+	if [[ "$pwUsers" == "" ]]; then
+		echo -e "\e[1;32mNormal. Did not find user without password.\033[0m"
+	else
+		for eachUser in $pwUsers; do
+			echo -e "\e[1;31mHigh risk. Found user without password: $eachUser\033[0m"
+		done
+		echo -e "\e[0;35mSuggestion: Delete the high risk users\033[0m"
+	fi
+}
 
 #######################################################################
 # file permission/ownership check
