@@ -29,10 +29,11 @@ function PreOp() {
 	#"$(uname)" = "Linux", for Euler, ubuntu, etc
 	else
 		CurrentId=$(id -u 2>/dev/null)
+		#echo "current id $CurrentId"
 	fi
 
 	#check if UID = 0(root)
-	if [ ${CurrentId} -eq 0 ]; then
+	if [ ${CurrentId} -ne 0 ]; then
 		echo -e "Should run as root!\nExit."
 		exit
 	fi
