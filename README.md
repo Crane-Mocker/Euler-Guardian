@@ -72,7 +72,7 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 #### SecCheck 安全策略检查
 
-检查是否开启了SELinux, 检查资源的限制情况, 检查口令安全策略
+检查是否开启了SELinux, 检查资源的限制情况
 
 #### UserInfoChk 用户信息检查
 
@@ -130,11 +130,26 @@ https://blog.csdn.net/xiezuoyong/article/details/49890695
 
 查找孤儿文件。
 
-查找指定目录下文件的权限, 默认rwxrwxrwx权限。（文件权限的检查和用户的需求有很大关系。）
+#### AuditChk 操作系统安全审计
+
+Linux Auditing System
+对于CentOS系:需要audit, audit-libs
+对于debian系:需要auditd
+
+对于OpenEuler的安全加固
+(to do)
+文档：
+https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%8A%A0%E5%9B%BA%E6%A6%82%E8%BF%B0.html
+https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E5%AE%89%E5%85%A8%E5%8A%A0%E5%9B%BA%E5%B7%A5%E5%85%B7.html
+
 
 #### OVALChk 软件包版本漏洞检查
 
-利用OVAL，根据软件包版本检查是否存在CVE漏洞。
+利用OVAL和oscap，根据软件包版本检查是否存在CVE漏洞。
+
+基线库来自：
+https://github.com/ComplianceAsCode/content
+https://oval.cisecurity.org/repository/download
 
 #### Function 函数调用
 
@@ -260,3 +275,4 @@ tmpArr[]
 - 安恒: 勒索病毒应急与响应手册
 - 绿盟: 应急响应技术指南
 - 等保2.0: GBT25070-2019信息安全技术网络安全等级保护安全设计技术要求
+- Minimum Security Requirements for Multi-User Operating Systems
