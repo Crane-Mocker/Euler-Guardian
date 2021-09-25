@@ -44,7 +44,7 @@ function PreOp() {
 		exit
 	fi
 
-	rm oscap* res/s.txt 2>/dev/null
+	rm res/s.txt 2>/dev/null
 }
 
 ########################################################################
