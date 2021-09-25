@@ -136,7 +136,7 @@ Linux Auditing System
 对于CentOS系:需要audit, audit-libs
 对于debian系:需要auditd
 
-对于OpenEuler的安全加固
+对于openEuler的安全加固
 (to do)
 文档：
 https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%8A%A0%E5%9B%BA%E6%A6%82%E8%BF%B0.html
@@ -150,6 +150,8 @@ https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E5%AE%89%E5%85%A8%E
 基线库来自：
 https://github.com/ComplianceAsCode/content
 https://oval.cisecurity.org/repository/download
+https://security-metadata.canonical.com
+https://www.redhat.com/security/data/oval/v2/
 
 #### Function 函数调用
 

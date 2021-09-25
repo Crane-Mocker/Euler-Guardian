@@ -370,28 +370,39 @@ function OVALChk() {
 	releaseVersionIDStr=`echo ${releaseVersionID//./}`
 	#echo "$releaseVersionIDStr"
 
-	targetOVALFile="ssg-${releaseNameStr}${releaseVersionIDStr}-ds.xml"
-	#echo "$targetOVALFile"
+	#default ssg:centos7 oval:redhat7
+	targetSSGFile="ssg-${releaseNameStr}${releaseVersionIDStr}-ds.xml"
+	targetOVALFile="${releaseNameStr}${releaseVersionIDStr}.oval.xml"
+
+	hasSSGFile=`ls ssg | grep ${targetSSGFile} 2>/dev/null`
+	if [ "$hasSSGFile" ]; then
+		# ssg check
+		echo -e "\e[1;34mSSG file found:\e[00m\n$targetSSGFile\033[0m"
+		oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results ./report/sec_conf_${timeStamp}.xml --report ./report/sec_conf_${timeStamp}.html ./ssg/${targetSSGFile}
+	else
+		echo -e "\e[1;34mNo SSG file found. Use centos7.\033[0m"
+		oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results ./report/sec_conf_${timeStamp}.xml --report ./report/sec_conf_${timeStamp}.html ./ssg/ssg-centos7-ds.xml
+	fi
+
 	hasOVALFile=`ls ssg | grep ${targetOVALFile} 2>/dev/null`
 	if [ "$hasOVALFile" ]; then
-		# ssg check
-		echo -e "\e[1;34mSSG file found:\e[00m\n$targetOVALFile\033[0m" 2>/dev/null
-		oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results ./report/sec_conf_${timeStamp}.xml --report ./report/sec_conf_${timeStamp}.html ./ssg/${targetOVALFile}
+		#echo "has oval file"
+		echo -e "\e[1;34mOVAL file found:\e[00m\n$targetOVALFile\033[0m"
+		oscap oval eval --results ./report/comp_vuln_${timeStamp}.xml --report ./report/comp_vuln_${timeStamp}.html ./ssg/${targetOVALFile}
 	else
-		#oval check
-		echo -e "\e[1;34mNo target OVALFile found. Downloading...\033[0m" 2>/dev/null
-		targetOVALFile="${releaseNameStr}_${releaseVersionIDStr}.xml"
-		wget -q https://oval.cisecurity.org/repository/download/5.11.2/vulnerability/${targetOVALFile}
-		hasOVALFile=`ls | grep ${targetOVALFile} 2>/dev/null`
+		targetOVALFile="${releaseNameStr}.oval.xml"
+		hasOVALFile=`ls ssg | grep ${targetOVALFile} 2>/dev/null`
 		if [ "$hasOVALFile" ]; then
-			#echo "has oval file"
-			oscap oval eval --results ./report/comp_vuln_${timeStamp}.xml --report ./report/comp_vuln_${timeStamp}.html ${targetOVALFile}
+			echo -e "\e[1;34mOVAL file found:\e[00m\n$targetOVALFile\033[0m"
+			oscap oval eval --results ./report/comp_vuln_${timeStamp}.xml --report ./report/comp_vuln_${timeStamp}.html ./ssg/${targetOVALFile}
 		else
-			oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_standard --results ./report/sec_conf_${timeStamp}.xml --report ./report/sec_conf_${timeStamp}.html ./ssg/ssg-centos7-ds.xml
+			echo -e "\e[1;34mNo OVAL file found. Use rhel7.\033[0m"
+			oscap oval eval --results ./report/comp_vuln_${timeStamp}.xml --report ./report/comp_vuln_${timeStamp}.html ./ssg/rhel7.oval.xml
 		fi
 	fi
 
 	echo -e "\e[1;34mPlease check for the results in report dir\033[0m" 2>/dev/null
+
 }
 
 #####################################################################
@@ -408,13 +419,13 @@ function ReportHead() {
 			<link rel='stylesheet' href='normalize.css'>
 			<title></title>
 		</head>
-		<body>" > ./report/${timeStamp}_EG_report.html
+		<body>" > ./report/EG_report_${timeStamp}.html
 }
 
 function ReportFoot() {
 	timeStamp2Date=`date -d @${timeStamp}`
 	echo "<div>$timeStamp2Date</div>
-	</body></html>" >> ./report/${timeStamp}_EG_report.html
+	</body></html>" >> ./report/EG_report_${timeStamp}.html
 }
 
 #####################################################################
