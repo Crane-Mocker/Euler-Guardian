@@ -5,6 +5,35 @@ Euler Guardian: generic Linux operating system risk assessment tool for openEule
 gitee：
 https://gitee.com/openeuler-competition/summer2021-110
 
+
+<!-- vim-markdown-toc GFM -->
+
+* [color in CLI](#color-in-cli)
+* [front end](#front-end)
+* [Module](#module)
+	* [local scan module](#local-scan-module)
+		* [PreOp](#preop)
+		* [SysInfoChk](#sysinfochk)
+		* [SecCheck](#seccheck)
+		* [UserInfoChk](#userinfochk)
+		* [UserIdenChk](#useridenchk)
+		* [FileChk](#filechk)
+		* [AuditChk](#auditchk)
+		* [OVALChk](#ovalchk)
+	* [ER emergency response module](#er-emergency-response-module)
+		* [BasicCheck](#basiccheck)
+		* [SensitiveFileCheck](#sensitivefilecheck)
+		* [FilesChanged](#fileschanged)
+		* [ProcAnalyse](#procanalyse)
+		* [HiddenProc](#hiddenproc)
+		* [HistoryCheck](#historycheck)
+		* [UserAnalyse](#useranalyse)
+		* [CronCheck](#croncheck)
+		* [WebshellCheck](#webshellcheck)
+* [Reference](#reference)
+
+<!-- vim-markdown-toc -->
+
 ## color in CLI
 
 |color|info|
@@ -26,13 +55,24 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 ### local scan module
 
-This module should be run as root.
+This module should be run as root. Reports will be generated after scanning.
 
-Reports will be generated after scanning.
+There are 4 reports generated in total.
+
+1. The summary of scan results, in format of charts. Click hyperlinks to see detailed information.
+
+![LS-index](pic/LS-report-index.gif)
+
+2. Detailed information. Detailed information of all scan results. (With anchor)
 
 ![LS-report](pic/LS-report.gif)
-![LS-report](pic/LS-report-2.png)
+
+3. Secure configuration report
+
 ![LS-SSG](pic/LS-SSG.png)
+
+4. CVE report
+
 ![LS-OVAL](pic/LS-OVAL.png)
 
 #### PreOp

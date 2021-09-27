@@ -9,6 +9,11 @@
 #PROGRAM_NAME="local_scan"
 #PROGRAM_AUTHOR="c0conut"
 
+# results of scan
+scanRes=()
+# risk level of each scan
+riskLevel=()
+
 #######################################################################
 # pre operations
 # 1. generate timeStamp
@@ -68,14 +73,14 @@ function SysInfoChk() {
 	releaseVersionIDStr=`echo ${releaseVersionID//./}`
 	echo -e "\e[1;34mOS:\033[0m $releaseNameStr $releaseVersionID"
 
-	local kernelName=`uname -s 2>/dev/null`
-	local kernelRelease=`uname -r 2>/dev/null`
+	kernelName=`uname -s 2>/dev/null`
+	kernelRelease=`uname -r 2>/dev/null`
 	echo -e "\e[1;34mKernel:\033[0m $kernelName $kernelRelease"
-	local hardwareP=`uname -i`
+	hardwareP=`uname -i`
 	echo -e "\e[1;34mPlatform:\033[0m $hardwareP"
 
 	echo "<div class='each-part'>
-		<h2><a href='#'>System Information</a></h2>
+		<h2><a href='#system-information' name='system-information'>System Information</a></h2>
 		<p>OS: ${releaseNameStr} ${releaseVersionID}</p>
 		<p>Kernel: ${kernelName} ${kernelRelease}</p>
 		<p>Platform: ${hardwareP}</p>
@@ -93,6 +98,8 @@ function SecCheck() {
 		echo -e "\e[1;34mSElinux status:\n\033[0m"
 		local tmpStr=`cat /etc/selinux/config | grep SELINUX=`
 		echo "$tmpStr"
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		SELinux status:</br>
 		</span>
@@ -100,6 +107,8 @@ function SecCheck() {
 		" >> ./report/EG_report_${timeStamp}.html
 	else
 		echo -e "\e[1;33mLow risk. SELinux not found\033[0m"
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="low"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		SELinux not found
 		</span></p>
@@ -110,6 +119,8 @@ function SecCheck() {
 	echo -e "\n\e[1;34mLimitations for various resources:\033[0m"
 	ulimit -a
 	tmpStr=`ulimit -a`
+	scanRes[${#scanRes[*]}]=`ulimit -a | wc -l`
+	riskLevel[${#riskLevel[*]}]="normal"
 	echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 	Limitations for various resources:
 	</span>
@@ -119,6 +130,52 @@ function SecCheck() {
 	" >> ./report/EG_report_${timeStamp}.html
 }
 
+#######################################################################
+# audit system check
+#
+#######################################################################
+function AuditChk() {
+	if [ "$(apt -v 2>/dev/null)" ]; then
+		if [ "$(auditd 2>/dev/null)" ]; then
+			scanRes[${#scanRes[*]}]="Found"
+			riskLevel[${#riskLevel[*]}]="normal"
+			echo -e "\e[1;32mNormal. Linux Auditing System found.\033[0m"
+			echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
+			Linux Auditing System found
+			</span></p>
+			" >> ./report/EG_report_${timeStamp}.html
+		else
+			scanRes[${#scanRes[*]}]="Not found"
+			riskLevel[${#riskLevel[*]}]="low"
+			echo -e "\e[1;33mLow risk. No Linux Auditing System\033[0m"
+			echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
+			No Linux Auditing System
+			</span></p>
+			" >> ./report/EG_report_${timeStamp}.html
+		fi
+	elif [ "$(yum --version 2>/dev/null)" ]; then
+		if [ "$(yum list audit audit-libs 2>/dev/null | grep audit)" ]; then
+			scanRes[${#scanRes[*]}]="Found"
+			riskLevel[${#riskLevel[*]}]="normal"
+			echo -e "\e[1;32mNormal. Linux Auditing System found.\033[0m"
+			echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
+			Linux Auditing System found
+			</span></p>
+			" >> ./report/EG_report_${timeStamp}.html
+		else
+			scanRes[${#scanRes[*]}]="Not found"
+			riskLevel[${#riskLevel[*]}]="low"
+			echo -e "\e[1;33mLow risk. No Linux Auditing System\033[0m"
+			echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
+			No Linux Auditing System
+			</span></p>
+			" >> ./report/EG_report_${timeStamp}.html
+		fi
+	fi
+
+	echo "</div>" >> ./report/EG_report_${timeStamp}.html
+}
+
 ########################################################################
 # user info
 # hostname, id, user accounts info, if passwords are stored as hash,
@@ -126,10 +183,10 @@ function SecCheck() {
 ########################################################################
 function UserInfoChk() {
 	echo "<div class='each-part'>
-		<h2><a href='#'>User Information</a></h2>" >> ./report/EG_report_${timeStamp}.html
+		<h2><a href='#user-information' name='user-information'>User Information</a></h2>" >> ./report/EG_report_${timeStamp}.html
 
 	# hostname
-	local Hostname=`hostname 2>/dev/null`
+	Hostname=`hostname 2>/dev/null`
 	if [ "$Hostname" ]; then
 		echo -e "\e[1;34mHostname: \e[00m$Hostname\n\033[0m" 2>/dev/null
 		echo "<p>Hostname: ${Hostname}
@@ -141,6 +198,8 @@ function UserInfoChk() {
 	#id
 	local Id=`id 2>/dev/null`
 	if [ "$Id" ]; then
+		scanRes[${#scanRes[*]}]=`id | grep -oE ^uid=[0-9]*`
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;34mCurrent user and group IDs:\e[00m\n$Id\n\033[0m" 2>/dev/null
 		echo -e "<p>Current user and group IDs:
 		</br>
@@ -165,13 +224,16 @@ function UserInfoChk() {
 		fi
 		#if password stored in /etc/passwd as hash
 		local HashPw=`grep -v '^[^:]*:[x]' /etc/passwd 2>/dev/null`
+		riskLevel[${#riskLevel[*]}]="normal"
 		if [ "$HashPw" ]; then
+			scanRes[${#scanRes[*]}]="Yes"
 			echo -e "\e[1;34mFound password stored in /etc/passwd as hash:\n\033[0m$HashPw\n" 2>/dev/null
 			echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 			Found password stored in /etc/passwd as hash.
 			</span>
 			</p>" >> ./report/EG_report_${timeStamp}.html
 		else
+			scanRes[${#scanRes[*]}]="No"
 			echo -e "\e[0;34mNo password is stored in /etc/passwd as hash.\n\033[0m" 2>/dev/null
 		fi
 	else
@@ -196,7 +258,7 @@ function UserInfoChk() {
 ########################################################################
 function UserIdenChk() {
 	echo "<div class='each-part'>
-		<h2><a href='#'>User identity and access control/a></h2>" >> ./report/EG_report_${timeStamp}.html
+		<h2><a href='#user-iden' name='user-iden'>User identity and access control</a></h2>" >> ./report/EG_report_${timeStamp}.html
 
 	# basic password configuration
 	local pwMaxDay=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_MAX_DAYS 2>/dev/null| egrep ^[0-9]`
@@ -204,7 +266,10 @@ function UserIdenChk() {
 	local pwMinLen=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_MIN_LEN 2>/dev/null| egrep ^[0-9]`
 	local pwWarnAge=`cat /etc/login.defs | grep ^PASS 2>/dev/null | grep PASS_WARN_AGE 2>/dev/null| egrep ^[0-9]`
 
+	local riskFlag=0 # normal
+
 	if [[ "$pwMaxDay" == "" ]] || [[ $pwMaxDay -eq 99999 ]]; then
+		riskFlag=1
 		echo -e "\e[1;33mLow risk. No limitation of password expired days\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		No limitation of password expired days
@@ -219,6 +284,7 @@ function UserIdenChk() {
 	fi
 
 	if [[ "$pwMinDay" == "" ]]; then
+		riskFlag=1
 		echo -e "\e[1;33mLow risk. No limitation of days to wait after last change of password\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		No limitation of days to wait after last change of password
@@ -233,6 +299,7 @@ function UserIdenChk() {
 	fi
 
 	if [[ "$pwMinLen" == "" ]]; then
+		riskFlag=1
 		echo -e "\e[1;33mLow risk. No limitation of password min length\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		No limitation of password min length
@@ -247,6 +314,7 @@ function UserIdenChk() {
 	fi
 
 	if [[ "$pwWarnAge" == "" ]]; then
+		riskFlag=1
 		echo -e "\e[1;33mLow risk. Did not set a date to get warning before password expiration\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		Did not set a date to get warning before password expiration
@@ -260,12 +328,22 @@ function UserIdenChk() {
 		" >> ./report/EG_report_${timeStamp}.html
 	fi
 
+	if [ $riskFlag -eq 0 ]; then #normal
+		scanRes[${#scanRes[*]}]="Normal"
+		riskLevel[${#riskLevel[*]}]="normal"
+	else
+		scanRes[${#scanRes[*]}]="Low risk"
+		riskLevel[${#riskLevel[*]}]="low"
+	fi
+
 	#pam password config
 	local pamCracklib=`cat /etc/pam.d/system-auth 2>/dev/null | grep pam_cracklib.so 2>/dev/null`
 	if [[ "$pamCracklib" == "" ]]; then
-		echo -e "\e[1;33mLow risk. Cracklib did not find"
+		scanRes[${#scanRes[*]}]="Cracklib not found"
+		riskLevel[${#riskLevel[*]}]="low"
+		echo -e "\e[1;33mLow risk. Cracklib not found"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
-		Cracklib did not find
+		Cracklib not found
 		</span></p>
 		" >> ./report/EG_report_${timeStamp}.html
 	else
@@ -318,6 +396,8 @@ function UserIdenChk() {
 			pamDictPath=${pamDictPath#*=}
 		fi
 		#echo "pamDictPath $pamDictPath"
+		scanRes[${#scanRes[*]}]="Normal"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. Cracklib found.\033[0m"
 		echo -e "\e[0;32mRetry times: $pamRetry\tMin num of different chars: $pamDifok\nMin length of password: $pamMinLen\tMin num of upper case chars: $pamUcredit\nMin num of lower case chars: $pamLcredit\tMin num of numbers: $pamDcredit\nPassword dictionary path: $pamDictPath\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
@@ -338,12 +418,16 @@ function UserIdenChk() {
 	echo -e "\n\e[1;34mChecking user without password.\033[0m"
 	local pwUsers=`awk -F: 'length($2)==0 {print $1}' /etc/shadow 2>/dev/null`
 	if [[ "$pwUsers" == "" ]]; then
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. Did not find user without password.\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		Did not find user without password
 		</span></p>
 		" >> ./report/EG_report_${timeStamp}.html
 	else
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="high"
 		for eachUser in $pwUsers; do
 			echo -e "\e[1;31mHigh risk. Found user without password: $eachUser\033[0m"
 			echo "<p><span style='padding-left: 19px; background: url(../template/pic/high.png) no-repeat;'>
@@ -363,7 +447,7 @@ function UserIdenChk() {
 #######################################################################
 function FileChk() {
 	echo "<div class='each-part'>
-		<h2><a href='#'>Files Check</a></h2>
+		<h2><a href='#files-check' name='files-check'>Files Check</a></h2>
 	" >> ./report/EG_report_${timeStamp}.html
 
 	# all files with "s" perm
@@ -372,6 +456,8 @@ function FileChk() {
 	find / -type f -perm -4000 -o -perm -2000 -print 2>/dev/null| xargs ls -al > res/s.txt
 	# s.txt size != 0
 	if [ $(du -b res/s.txt | grep -oE ^[0-9]*) -ne 0 ]; then
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="low"
 		echo -e "\e[1;33mLow risk. Files with s perm found. Please check them in res/s.txt\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
 		Files with s perm found. Please check them in res/s.txt
@@ -379,6 +465,8 @@ function FileChk() {
 		" >> ./report/EG_report_${timeStamp}.html
 	# s.txt size == 0
 	else
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. No files with s perm found\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		No files with s perm found
@@ -390,12 +478,16 @@ function FileChk() {
 	echo -e "\n\e[1;34mChecking files have 777 perms without group belonged to\033[0m"
 	file777Perm=`find / -perm 777 -nogroup 2>/dev/null`
 	if [[ "$file777Perm" == "" ]]; then
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. No files having 777 perm without group belonged to\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		No files having 777 perm without group belonged to
 		</span></p>
 		" >> ./report/EG_report_${timeStamp}.html
 	else
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="high"
 		echo -e "\e[1;31mHigh risk. Found:\n\033[0m$file777Perm"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/high.png) no-repeat;'>
 		Found files having 777 perm without group belonged to:
@@ -410,12 +502,16 @@ function FileChk() {
 	echo -e "\n\e[1;34mChecking orphan files\033[0m"
 	orphanFile=`find / -nouser -o -nogroup 2>/dev/null`
 	if [[ "$orphanFile" == "" ]]; then
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. No orphan file found\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		No orphan file found
 		</span></p>
 		" >> ./report/EG_report_${timeStamp}.html
 	else
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="high"
 		echo -e "\e[1;31mHigh risk. Found:\n\033[0m$orphanFile"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/high.png) no-repeat;'>
 		Found orphan files:
@@ -429,12 +525,16 @@ function FileChk() {
 	echo -e "\n\e[1;34mChecking unusual modules loaded in kernel.\033[0m"
 	unusualMod=`lsmod | egrep -v "ablk_helper|ac97_bus|acpi_power_meter|aesni_intel|ahci|ata_generic|ata_piix|auth_rpcgss|binfmt_misc|bluetooth|bnep|bnx2|bridge|cdrom|cirrus|coretemp|crc_t10dif|crc32_pclmul|crc32c_intel|crct10dif_common|crct10dif_generic|crct10dif_pclmul|cryptd|dca|dcdbas|dm_log|dm_mirror|dm_mod|dm_region_hash|drm|drm_kms_helper|drm_panel_orientation_quirks|e1000|ebtable_broute|ebtable_filter|ebtable_nat|ebtables|edac_core|ext4|fb_sys_fops|floppy|fuse|gf128mul|ghash_clmulni_intel|glue_helper|grace|i2c_algo_bit|i2c_core|i2c_piix4|i7core_edac|intel_powerclamp|ioatdma|ip_set|ip_tables|ip6_tables|ip6t_REJECT|ip6t_rpfilter|ip6table_filter|ip6table_mangle|ip6table_nat|ip6ta ble_raw|ip6table_security|ipmi_devintf|ipmi_msghandler|ipmi_si|ipmi_ssif|ipt_MASQUERADE|ipt_REJECT|iptable_filter|iptable_mangle|iptable_nat|iptable_raw|iptable_security|iTCO_vendor_support|iTCO_wdt|jbd2|joydev|kvm|kvm_intel|libahci|libata|libcrc32c|llc|lockd|lpc_ich|lrw|mbcache|megaraid_sas|mfd_core|mgag200|Module|mptbase|mptscsih|mptspi|nf_conntrack|nf_conntrack_ipv4|nf_conntrack_ipv6|nf_defrag_ipv4|nf_defrag_ipv6|nf_nat|nf_nat_ipv4|nf_nat_ipv6|nf_nat_masquerade_ipv4|nfnetlink|nfnetlink_log|nfnetlink_queue|nfs_acl|nfsd|parport|parport_pc|pata_acpi|pcspkr|ppdev|rfkill|sch_fq_codel|scsi_transport_spi|sd_mod|serio_raw|sg|shpchp|snd|snd_ac97_codec|snd_ens1371|snd_page_alloc|snd_pcm|snd_rawmidi|snd_seq|snd_seq_device|snd_seq_midi|snd_seq_midi_event|snd_timer|soundcore|sr_mod|stp|sunrpc|syscopyarea|sysfillrect|sysimgblt|tcp_lp|ttm|tun|uvcvideo|videobuf2_core|videobuf2_memops|videobuf2_vmalloc|videodev|virtio|virtio_balloon|virtio_console|virtio_net|virtio_pci|virtio_ring|virtio_scsi|vmhgfs|vmw_balloon|vmw_vmci|vmw_vsock_vmci_transport|vmware_balloon|vmwgfx|vsock|xfs|xt_CHECKSUM|xt_conntrack|xt_state|raid*|tcpbbr|btrfs|.*diag|psmouse|ufs|linear|msdos|cpuid|veth|xt_tcpudp|xfrm_user|xfrm_algo|xt_addrtype|br_netfilter|input_leds|sch_fq|ib_iser|rdma_cm|iw_cm|ib_cm|ib_core|.*scsi.*|tcp_bbr|pcbc|autofs4|multipath|hfs.*|minix|ntfs|vfat|jfs|usbcore|usb_common|ehci_hcd|uhci_hcd|ecb|crc32c_generic|button|hid|usbhid|evdev|hid_generic|overlay|xt_nat|qnx4|sb_edac|acpi_cpufreq|ixgbe|pf_ring|tcp_htcp|cfg80211|x86_pkg_temp_thermal|mei_me|mei|processor|thermal_sys|lp|enclosure|ses|ehci_pci|igb|i2c_i801|pps_core|isofs|nls_utf8|xt_REDIRECT|xt_multiport|iosf_mbi|qxl|cdc_ether|usbnet|bluetooth" 2>/dev/null`
 	if [[ "$unusualMod" == "" ]]; then
+		scanRes[${#scanRes[*]}]="Not found"
+		riskLevel[${#riskLevel[*]}]="normal"
 		echo -e "\e[1;32mNormal. No unusual module found\033[0m"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
 		No unusual module found
 		</span></p>
 		" >> ./report/EG_report_${timeStamp}.html
 	else
+		scanRes[${#scanRes[*]}]="Found"
+		riskLevel[${#riskLevel[*]}]="high"
 		echo "<p><span style='padding-left: 19px; background: url(../template/pic/high.png) no-repeat;'>
 		Found unusual modules:
 		</span>
@@ -447,44 +547,6 @@ function FileChk() {
 			echo "Module: ${tmpArr[0]} </br>" >> ./report/EG_report_${timeStamp}.html
 		done <<< "$unusualMod"
 		echo "</p>" >> ./report/EG_report_${timeStamp}.html
-	fi
-
-	echo "</div>" >> ./report/EG_report_${timeStamp}.html
-}
-
-#######################################################################
-# audit system check
-#
-#######################################################################
-function AuditChk() {
-	if [ "$(apt -v 2>/dev/null)" ]; then
-		if [ "$(auditd 2>/dev/null)" ]; then
-			echo -e "\e[1;32mNormal. Linux Auditing System found.\033[0m"
-			echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
-			Linux Auditing System found
-			</span></p>
-			" >> ./report/EG_report_${timeStamp}.html
-		else
-			echo -e "\e[1;33mLow risk. No Linux Auditing System\033[0m"
-			echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
-			No Linux Auditing System
-			</span></p>
-			" >> ./report/EG_report_${timeStamp}.html
-		fi
-	elif [ "$(yum --version 2>/dev/null)" ]; then
-		if [ "$(yum list audit audit-libs 2>/dev/null | grep audit)" ]; then
-			echo -e "\e[1;32mNormal. Linux Auditing System found.\033[0m"
-			echo "<p><span style='padding-left: 19px; background: url(../template/pic/normal.png) no-repeat;'>
-			Linux Auditing System found
-			</span></p>
-			" >> ./report/EG_report_${timeStamp}.html
-		else
-			echo -e "\e[1;33mLow risk. No Linux Auditing System\033[0m"
-			echo "<p><span style='padding-left: 19px; background: url(../template/pic/low.png) no-repeat;'>
-			No Linux Auditing System
-			</span></p>
-			" >> ./report/EG_report_${timeStamp}.html
-		fi
 	fi
 
 	echo "</div>" >> ./report/EG_report_${timeStamp}.html
@@ -602,6 +664,197 @@ function ReportFoot() {
 	echo -e "</body></html>" >> ./report/EG_report_${timeStamp}.html
 }
 
+function ReportSum() {
+	echo "
+	<!DOCTYPE html>
+		<html lang='en' dir='ltr'>
+			<head>
+				<!--This file should be under res/-->
+				<meta charset='utf-8'>
+				<meta name='viewport' content='width=device-width,initial-scale=1'>
+				<link href='../template/pic/logo.ico' type='image/x-icon'>
+				<title>Euler Guardian</title>
+				<link rel='stylesheet' href='../template/normalize.css'>
+				<link rel='stylesheet' type='text/css' href='../template/report.css'>
+			</head>
+			<body>
+
+	<div class='each-part'>
+			<h2><a href='#'>System Information</a></h2>
+			<table>
+				<tbody>
+					<tr>
+						<td>OS</td>
+						<td>${releaseNameStr} ${releaseVersionID}</td>
+					</tr>
+					<tr>
+						<td>Kernel</td>
+						<td>${kernelName} ${kernelRelease}</td>
+					</tr>
+					<tr>
+						<td>Platform</td>
+						<td>${hardwareP}</td>
+					</tr>
+					<tr>
+						<td>SELinux</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#system-information'>
+							<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[0]}.png) no-repeat;'>
+								${scanRes[0]}
+							</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>Limitations for various resources</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#system-information'>
+							<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[1]}.png) no-repeat;'>
+								${scanRes[1]} items
+							</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>Linux Auditing System</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#system-information'>
+							<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[2]}.png) no-repeat;'>
+								${scanRes[2]}
+							</span>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+
+	<div class='each-part'>
+			<h2><a href='#'>User Information</a></h2>
+			<table>
+				<tbody>
+					<tr>
+						<td>Hostname</td>
+						<td>${Hostname}</td>
+					</tr>
+					<tr>
+						<td>Current UID</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#user-information'>
+								${scanRes[3]}
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>Found passwords in /etc/passwd stored as hash</td>
+						<td>
+							<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[4]}.png) no-repeat;'>
+								${scanRes[4]}
+							</span>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+
+	<div class='each-part'>
+			<h2><a href='#'>User identity and access control</a></h2>
+			<table>
+				<tbody>
+					<tr>
+						<td>basic password configuration</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#user-iden'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[5]}.png) no-repeat;'>
+									${scanRes[5]}
+								</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>pam Cracklib configuration</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#user-iden'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[6]}.png) no-repeat;'>
+									${scanRes[6]}
+								</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>User without password</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#user-iden'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[7]}.png) no-repeat;'>
+									${scanRes[7]}
+								</span>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+
+	<div class='each-part'>
+			<h2><a href='#'>Files Check</a></h2>
+			<table>
+				<tbody>
+					<tr>
+						<td>File(s) with S perm</td>
+						<td>
+							<a href='../res/s.txt'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[8]}.png) no-repeat;'>
+									${scanRes[8]}
+								</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>777 perm file(s) without group belonged to</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#files-check'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[9]}.png) no-repeat;'>
+									${scanRes[9]}
+								</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>orphan file(s)</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#files-check'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[10]}.png) no-repeat;'>
+									${scanRes[10]}
+								</span>
+							</a>
+						</td>
+					</tr>
+					<tr>
+						<td>Unusual kernel module(s)</td>
+						<td>
+							<a href='./EG_report_${timeStamp}.html#files-check'>
+								<span style='padding-left: 19px; background: url(../template/pic/${riskLevel[11]}.png) no-repeat;'>
+									${scanRes[11]}
+								</span>
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+	</div>
+
+	<div class='each-part'>
+			<h2><a href='sec_conf_${timeStamp}.html'>Security Configuration Scan</a></h2>
+	</div>
+
+	<div class='each-part'>
+			<h2><a href='comp_vuln_${timeStamp}.html'>OVAL Scan</a></h2>
+	</div>
+
+	</body></html>
+	" > ./report/EG_index_${timeStamp}.html
+}
+
 #####################################################################
 #  Program Starts
 #####################################################################
@@ -654,4 +907,8 @@ echo "Software vuln check"
 echo -e "-----------------------------------------------\033[0m"
 OVALChk
 
+echo -e "\n\e[1;34m-----------------------------------------------"
+echo "Generating reports"
+echo -e "-----------------------------------------------\033[0m"
 ReportFoot
+ReportSum

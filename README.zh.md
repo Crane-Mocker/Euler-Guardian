@@ -54,13 +54,24 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
 ### local scan 本地扫描模块
 
-本模块需以root权限运行。
+本模块需以root权限运行。运行完成后将生成报告。
 
-运行完成后将生成报告。
+报告分为四部分：
+
+1. 扫描结果汇总，表格形式，点击超链接跳转查看详细信息
+
+![LS-index](pic/LS-report-index.gif)
+
+2. 详细信息报告。所有扫描结果的详细信息。(有锚点)
 
 ![LS-report](pic/LS-report.gif)
-![LS-report](pic/LS-report-2.png)
+
+3. Secure configuration 报告
+
 ![LS-SSG](pic/LS-SSG.png)
+
+4. CVE 报告
+
 ![LS-OVAL](pic/LS-OVAL.png)
 
 #### PreOp 预操作

@@ -14,13 +14,39 @@
     font-size:20px;
     margin: 35px 0 20px;
 }
-.each-part h2 a {text-transform:  lowercase;}
+
+table {
+  width:70%;
+  border-spacing:0;
+  margin:0 auto;
+  border: 1px solid black;
+}
+
+tbody tr:last-child td{
+  border-bottom:none;
+}
+th,td{
+  text-align:center;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
+}
+th:last-child,td:last-child{
+  border-right:none
+}
+
 .each-part p {padding-bottom: 35px;text-transform: initial;position: relative;}
 
 .each-part:hover .each-part:hover,.each-part:hover
 .each-part:hover h2 a,.each-part:hover p{color: #fff;}
 .each-part:hover  p:before {background: #fff;}
 .each-part:hover{box-shadow: 0 12px 30px 0px rgba(0,1,193,.2);background: #3E6396;border: 1px solid #3E6396;}
+
+.each-part:hover table {border: 1px solid white;}
+.each-part:hover td {color: #fff; border-right: 1px solid white; border-bottom: 1px solid white;}
+.each-part:hover th {border-right: 1px solid white; border-bottom: 1px solid white;}
+
+.each-part:hover th:last-child td:last-child {border-right:none;}
+.each-part:hover tbody tr:last-child td{border-bottom:none;}
 
 @media screen and (max-width:767px){
 	.each-part {max-width: 350px;margin: 30px auto;}
