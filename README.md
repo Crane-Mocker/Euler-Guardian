@@ -1,42 +1,11 @@
 # Euler Guardian
 
-Euler Guardian: 操作系统风险评估系统
+Euler Guardian: generic Linux operating system risk assessment tool for openEuler community
 
-gitee 地址：
+gitee：
 https://gitee.com/openeuler-competition/summer2021-110
 
-gitlab 地址：
-
-
-<!-- vim-markdown-toc GFM -->
-
-* [配色](#配色)
-* [front end 前端](#front-end-前端)
-* [模块说明](#模块说明)
-	* [local scan 本地扫描模块](#local-scan-本地扫描模块)
-		* [PreOp 预操作](#preop-预操作)
-		* [SysInfoChk 系统信息检查](#sysinfochk-系统信息检查)
-		* [SecCheck 安全策略检查](#seccheck-安全策略检查)
-		* [UserInfoChk 用户信息检查](#userinfochk-用户信息检查)
-		* [UserIdenChk 用户身份检查](#useridenchk-用户身份检查)
-		* [FileChk 文件权限检查](#filechk-文件权限检查)
-		* [AuditChk 操作系统安全审计](#auditchk-操作系统安全审计)
-		* [OVALChk 软件包版本漏洞检查](#ovalchk-软件包版本漏洞检查)
-	* [ER emergency response 应急响应模块](#er-emergency-response-应急响应模块)
-		* [BasicCheck](#basiccheck)
-		* [SensitiveFileCheck](#sensitivefilecheck)
-		* [FilesChanged](#fileschanged)
-		* [ProcAnalyse](#procanalyse)
-		* [HiddenProc](#hiddenproc)
-		* [HistoryCheck](#historycheck)
-		* [UserAnalyse](#useranalyse)
-		* [CronCheck](#croncheck)
-		* [WebshellCheck](#webshellcheck)
-* [Reference](#reference)
-
-<!-- vim-markdown-toc -->
-
-## 配色
+## color in CLI
 
 |color|info|
 |---|---|
@@ -47,150 +16,155 @@ gitlab 地址：
 |red|high risk|
 |purple|suggesion to repair|
 
-## front end 前端
+## front end
 
-初始化CSS来自：
+Normalize CSS from:
+
 https://necolas.github.io/normalize.css/8.0.1/normalize.css
 
-## 模块说明
+## Module
 
-### local scan 本地扫描模块
+### local scan module
 
-本模块需以root权限运行。
+This module should be run as root.
 
-运行完成后将生成报告。
+Reports will be generated after scanning.
 
 ![LS-report](pic/LS-report.gif)
 ![LS-report](pic/LS-report-2.png)
 ![LS-SSG](pic/LS-SSG.png)
 ![LS-OVAL](pic/LS-OVAL.png)
 
-#### PreOp 预操作
+#### PreOp
 
-1. 检查current id, 判断是否有root权限
+Pre operations
 
-2. 检查SetUID
+1. check current id, should be run as root
 
-3. 检查是否有之前检查留下的文件s.txt，若有，则删除
+2. check SetUID
 
-#### SysInfoChk 系统信息检查
+3. delete s.txt left by the previous scan if there is any
 
-检查系统信息。
+#### SysInfoChk
 
-#### SecCheck 安全策略检查
+System information check.
 
-1. 检查是否开启了SELinux
-2. 检查资源的限制情况
+#### SecCheck
+
+Security policy check.
+
+1. if SELinux is Used
+
+2. Limitation of resources
 
 ![LS-sys](pic/LS-sys.png)
 
-#### UserInfoChk 用户信息检查
+#### UserInfoChk
 
-检查用户信息。
+Check user information
 
 ![LS-user](pic/LS-user-0.png)
 
-1. 检查hostname
+1. hostname
+
 2. id
-3. 检查口令是否以hash存储
-4. 检查上一次登录的用户。
 
-#### UserIdenChk 用户身份检查
+3. if passwords are stored as hash
 
-口令配置（时效+复杂度）
+4. last login users
+
+#### UserIdenChk
+
+Password configuration
 
 ![LS-UserIdenChk](pic/LS-UserIdenChk.png)
 
-1.口令有效期 PASS_MAX_DAYS
+1. Days for a password to expire: PASS_MAX_DAYS
 
-2.距上次更改口令后，最短多长时间可以再次更改 PASS_MIN_DAYS
+2. Min days to wait after last change of password: PASS_MIN_DAYS
 
-3.口令最小长度 PASS_MIN_LEN
+3. Min length of password: PASS_MIN_LEN
 
-4.口令到期前多少天通知 PASS_WARN_AGE
+4. Days to receive warning before password expiration: PASS_WARN_AGE
 
-5.口令已使用的时间
+5. Days password has been used (to do)
 
-(to do)
+6. PAM Cracklib provides with the ability to control complexity of password.
 
-2种计算方式
+**password**: password complexity policy
 
-- 对于CentOS系，利用change`change -l [user]`
+(Usually N < 0)
 
-- `/etc/shadow`
-https://blog.csdn.net/xiezuoyong/article/details/49890695
+|option|information|
+|---|---|
+|retry|retry times|
+|difok|character changes in the new password that differentiate it from the old password|
+|minlen|The minimum acceptable size for the new password|
+|ucredit|(N >= 0) the maximum credit for having upper case letters in the new password
+(N < 0) the minimum number of upper case letters in a new password.|
+|lcredit|(N >= 0) the maximum credit for having lower case letters in the new password
+(N < 0) the minimum number of lower case letters in a new password|
+|dcredit|(N >= 0) the maximum credit for having digits in the new password
+(N < 0) the minimum number of digits in a new password|
+|dictpath|Path to the cracklib dictionaries|
 
-6.PAM的cracklib模块提供口令复杂度控制
+7. Check users without password
 
-**auth**类接口对用户身份进行识别认证
+#### FileChk
 
-`pam_env.so`定义用户登录之后的环境变量
-`pam_unix.so`提示用户输入口令，并与/etc/shadow进行对比
-`pam_succeed_if.so`限制登录条件。在Linux系统中，一般系统用户的uid都在500之内，`uid >= 500 quiet`表示允许uid >= 500的用户登录，即使用useradd命令以及默认选项建立的普通用户直接由本地控制台登录系统。
-`pam_deny.so`拒绝不匹配任何规则的登录
-
-**password**接口确认用户使用的口令的合法性
-
-|retry|difok|minlen|ucredit|lcredit|dcredit|dictpath|
-|---|---|---|---|---|---|
-|尝试次数|最少不同字符|最小口令长度|最少大写字母|最少小写字母|最少数字|密码字典路径|
-
-7.空口令用户检查
-
-#### FileChk 文件权限检查
+File check
 
 ![LS-file](pic/LS-file.png)
 
-1. 查找系统中所有含s权限的文件。
+1. Search for all the files in the OS with s perm
 
-2. 查找无属组的777权限文件。
+2. Search for files having 777 perm without group belonged to
 
-3. 查找孤儿文件。
+3. Search for orphan files
 
-#### AuditChk 操作系统安全审计
+4. unusual modules loaded to kernel
+
+#### AuditChk
 
 Linux Auditing System
-对于CentOS系:需要audit, audit-libs
-对于debian系:需要auditd
 
-对于openEuler的安全加固
-(to do)
-文档：
+For CentOS etc: audit, audit-libs
+
+Fpr debian etc: auditd
+
+Security reinforce for openEuler OS: (to do)
+
 https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%8A%A0%E5%9B%BA%E6%A6%82%E8%BF%B0.html
+
 https://docs.openeuler.org/zh/docs/20.03_LTS/docs/SecHarden/%E5%AE%89%E5%85%A8%E5%8A%A0%E5%9B%BA%E5%B7%A5%E5%85%B7.html
 
+#### OVALChk
 
-#### OVALChk 软件包版本漏洞检查
+Using OVAL files and oscap, scan secure configuration and CVEs of the OS.
 
-利用OVAL和oscap，根据软件包版本检查是否存在CVE漏洞和安全配置。
+SSG database from:
 
-![LS-SSG](pic/LS-SSG-cli.png)
-
-基线库来自：
 https://github.com/ComplianceAsCode/content
+
 https://oval.cisecurity.org/repository/download
+
 https://security-metadata.canonical.com
+
 https://www.redhat.com/security/data/oval/v2/
 
-### ER emergency response 应急响应模块
+### ER emergency response module
 
-使用场景: Linux受到入侵后的自动化快速应急响应。
+Automatical emergency response after intrusion
 
 #### BasicCheck
 
-基本检查
+Basic check
 
 ![ER-0](pic/ER-0.png)
 
-1. iptables防火墙规则
+1. iptables: firewall rules
 
-2. 开放的TCP, UDP端口
-
-- systemd-resolve
-systemd-resolve 是 Ubuntu 下 DNS 解析相关的命令，能使用它来操作 DNS 相关的功能。
-- avahi
-Zero configuration networking(zeroconf)零配置网络服务规范，是一种用于自动生成可用IP地址的网络技术，不需要额外的手动配置和专属的配置服务器。
-Avahi 是Zeroconf规范的开源实现，常见使用在Linux上。包含了一整套多播DNS(multicastDNS)/DNS-SD网络服务的实现。
+2. open TCP and UDP ports
 
 3. init.d services
 
@@ -198,11 +172,9 @@ Avahi 是Zeroconf规范的开源实现，常见使用在Linux上。包含了一�
 
 #### SensitiveFileCheck
 
-敏感文件检查
+unusual modules loaded to kernel
 
 ![ER-1](pic/ER-1.png)
-
-1. 检查加载到内核的不常见module
 
 tmpArr[]:
 
@@ -212,74 +184,69 @@ tmpArr[]:
 
 #### FilesChanged
 
-被改变的文件检查
+Check changed files
 
 ![ER-2](pic/ER-2.png)
 
-1. 文件打开，但是文件已被删除(除浏览器)
-
-tmpArr[]
+1. files that are opened but deleted (except browser)
 
 |0|1|2|3|4|5|6|7|8|9|
 |---|---|---|---|---|---|---|---|---|---|
 |COMMAND|PID|USER|FD|TYPE|DEVICE|SIZE/OFF|NLINK|NODE|NAME|
 
+2. files changed in 7 days
 
-2. 文件改变时间检查
+- atime: Access timestamp, which indicates the last time a file was accessed.
 
-检查7天之内，指定目录下ctime改变
+- ctime : Change timestamp, which refers to the last time some metadata related to the file was changed.
 
-- atime: access time, 在读取文件或者执行文件时更改的
-- ctime: change time, 在写入文件、更改所有者、权限或链接设置时随Inode内容更改而更改
-- mtime：modify time, 写入文件时更改
+- mtime: Modified timestamp, which is the last time a file's contents were modified.
 
 #### ProcAnalyse
 
-进程检查
+If there are processes using CPU more than n%
 
 ![ER-3](pic/ER-3.png)
 
-检查proc使用CPU的百分比是否多于n%
-
 #### HiddenProc
 
-检查隐藏的process, 并按升序排序
+Check hidden processes and sort
 
 #### HistoryCheck
 
 ![ER-4](pic/ER-4.png)
 
-1. 检查history中wget
+1. Check `wget` in history
 
-2. 检查history中ssh
+2. Check `ssh` in history
 
-3. 检查是否有ssh的root用户口令爆破
+3. Check ssh brute-force as root
 
 #### UserAnalyse
 
 ![ER-5](pic/ER-5.png)
 
-1. 检查有root权限的用户是否为root
+1. If `root` is the only root user
 
-2. 检查空口令用户
+2. Users without passwords
 
-3. 可登陆用户
+3. Users that are able to login
 
-4. 所有用户的上次登录情况
+4. Last login of all users
 
 #### CronCheck
 
 ![ER-6](pic/ER-6.png)
 
-1. root的crontab files检查
+1. crontab files of root
 
-2. cron后门检查
+2. cron backdoor
 
 #### WebshellCheck
 
 ![ER-7](pic/ER-7.png)
 
-基于文件的webshell检查, 支持php asp jsp
+Webshell check based on files, supporting php, asp and jsp
 
 ## Reference
 

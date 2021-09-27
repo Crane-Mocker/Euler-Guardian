@@ -97,7 +97,7 @@ function ProcAnalyse() {
 		#echo "${tmpArr[2]}"
 		# use more than 30% CPU
 		if [ `echo "${tmpArr[2]}>30.0" | bc` -eq 1 ]; then
-			echo -e "\e[1;33mLow risk. Proc ${tmpArr[1]} uses ${tmpArr[2]}\% CPU \033[0m"
+			echo -e "\e[1;33mLow risk. Proc ${tmpArr[1]} uses ${tmpArr[2]}% CPU \033[0m"
 			let tmpCnt++
 		fi
 	done <<< "$procCPU"
@@ -220,7 +220,7 @@ function CronCheck() {
 
 	echo -e "\n\e[1;34mChecking cron backdoors\033[0m"
 	cronFileList=()
-	tmpLs=`ls /etc/cron* /var/spool/cron/*`
+	tmpLs=`ls /etc/cron* /var/spool/cron/* 2>/dev/null`
 	path=""
 	for line in $tmpLs; do
 		if [[ "$line" == /* ]]; then
