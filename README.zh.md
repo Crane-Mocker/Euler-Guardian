@@ -198,6 +198,14 @@ https://www.redhat.com/security/data/oval/v2/
 
 使用场景: Linux受到入侵后的自动化快速应急响应。
 
+可以选择是否生成HTML报告。
+
+![ER-cli](pic/ER-cli.png)
+
+生成报告为表格形式
+
+![ER-chart](pic/ER-chart.png)
+
 #### BasicCheck
 
 基本检查

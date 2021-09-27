@@ -196,6 +196,14 @@ https://www.redhat.com/security/data/oval/v2/
 
 Automatical emergency response after intrusion
 
+An HTML report can be generated according to the scan results.
+
+![ER-cli](pic/ER-cli.png)
+
+The report will be in the format of chart
+
+![ER-chart](pic/ER-chart.png)
+
 #### BasicCheck
 
 Basic check
