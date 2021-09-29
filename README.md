@@ -43,7 +43,7 @@ https://gitee.com/openeuler-competition/summer2021-110
 |green|normal|
 |yellow|low risk|
 |red|high risk|
-|purple|suggesion to repair|
+|purple|suggestion to repair|
 
 ## front end
 
