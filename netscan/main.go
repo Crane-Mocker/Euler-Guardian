@@ -8,6 +8,8 @@ import (
 
 var (
 	cliHelp = flag.Bool("h", false, "Help")
+	cliPort = flag.Int("p", 5555, "Port")
+	cliTimeOut = flag.Int64("t", 1200, "Timeout, ms")
 )
 
 func main(){
@@ -25,4 +27,5 @@ func main(){
 		fmt.Println("This is the net scan module of Euler Guardian.")
 		fmt.Println("Usage:")
 	}
+	portScan()
 }
