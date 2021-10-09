@@ -565,7 +565,7 @@ function OVALChk() {
 			:
 		else
 			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" 2>/dev/null
-			sudo apt-get install libopenscap8
+			apt-get install libopenscap8
 		fi
 	elif [ "$(yum --version 2>/dev/null)" ]; then
 		# use yum
@@ -576,7 +576,7 @@ function OVALChk() {
 			:
 		else
 			echo -e "\e[1;34mNo oscap. Downloading...\n\033[0m" 2>/dev/null
-			sudo yum install openscap-utils -y
+			yum install openscap-utils -y
 		fi
 	fi
 
@@ -853,6 +853,130 @@ function ReportSum() {
 
 	</body></html>
 	" > ./report/EG_index_${timeStamp}.html
+}
+
+#####################################################################
+#  Send email
+#####################################################################
+function SendEmail() {
+    #fromAddr="xx@xx.com"
+    #toAddr="xx@xx.com"
+    emailBody=`echo "
+            <!DOCTYPE html>
+                <html lang='en' dir='ltr'>
+                <body>
+                <div>
+                        <h2>System Information</h2>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>OS</td>
+                                    <td>${releaseNameStr} ${releaseVersionID}</td>
+                                </tr>
+                                <tr>
+                                    <td>Kernel</td>
+                                    <td>${kernelName} ${kernelRelease}</td>
+                                </tr>
+                                <tr>
+                                    <td>Platform</td>
+                                    <td>${hardwareP}</td>
+                                </tr>
+                                <tr>
+                                    <td>SELinux</td>
+                                    <td>${scanRes[0]}</td>
+                                </tr>
+                                <tr>
+                                    <td>Limitations for various resources</td>
+                                    <td>${scanRes[1]} items</td>
+                                </tr>
+                                <tr>
+                                    <td>Linux Auditing System</td>
+                                    <td>${scanRes[2]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                </div>
+
+                <div>
+                        <h2>User Information</h2>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>Hostname</td>
+                                    <td>${Hostname}</td>
+                                </tr>
+                                <tr>
+                                    <td>Current UID</td>
+                                    <td>${scanRes[3]}</td>
+                                </tr>
+                                <tr>
+                                    <td>Found passwords in /etc/passwd stored as hash</td>
+                                    <td>${scanRes[4]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                </div>
+
+                <div>
+                        <h2>User identity and access control</h2>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>basic password configuration</td>
+                                    <td>${scanRes[5]}</td>
+                                </tr>
+                                <tr>
+                                    <td>pam Cracklib configuration</td>
+                                    <td>${scanRes[6]}</td>
+                                </tr>
+                                <tr>
+                                    <td>User without password</td>
+                                    <td>${scanRes[7]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                </div>
+
+                <div>
+                        <h2>Files Check</h2>
+                        <table>
+                            <tbody>
+                                <tr>
+                                    <td>File(s) with S perm</td>
+                                    <td>${scanRes[8]}</td>
+                                </tr>
+                                <tr>
+                                    <td>777 perm file(s) without group belonged to</td>
+                                    <td>${scanRes[9]}</td>
+                                </tr>
+                                <tr>
+                                    <td>orphan file(s)</td>
+                                    <td>${scanRes[10]}</td>
+                                </tr>
+                                <tr>
+                                    <td>Unusual kernel module(s)</td>
+                                    <td>${scanRes[11]}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                </div>
+                <h2>Please check details according to the reports.</h2>
+                </body>
+                </html>
+    "`
+    {
+    # generate email headers and begin of the body asspecified by HERE document
+	cat <<-EMAIL
+	To: Dear User<${toAddr}>
+	From: Euler Guardian<${fromAddr}>
+	Subject: Euler Guardian Report
+	Content-Type: text/html; charset=UTF-8
+
+	${emailBody}
+
+	EMAIL
+
+    } | sendmail -t && echo -e "\e[1;32mSucc: Mail sent.\033[0m"
 }
 
 #####################################################################

@@ -34,6 +34,42 @@ https://gitee.com/openeuler-competition/summer2021-110
 
 <!-- vim-markdown-toc -->
 
+## Configuration
+
+Firstly, finish configuration before using.
+
+This configuration is not obliged if you only use emergency response module.
+
+1. run config.sh
+
+```bash
+chmod +x config.sh
+su
+./config.sh
+```
+
+2. Config ssmtp
+
+This configuration is not obliged when you do not send emails to inform users.
+
+```bash
+vi /etc/ssmtp/ssmtp.conf # root privilidge is needed
+```
+
+Change the file like this
+
+```
+root=username@gmail.com
+mailhub=smtp.gmail.com:465
+rewriteDomain=gmail.com
+AuthUser=username
+AuthPass=authcode
+FromLineOverride=YES
+UseTLS=YES
+```
+
+**Notice: When sending an email, the fromAddr should be the address you set in configuration**
+
 ## color in CLI
 
 |color|info|

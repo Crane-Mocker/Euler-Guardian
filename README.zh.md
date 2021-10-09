@@ -33,6 +33,43 @@ https://gitee.com/openeuler-competition/summer2021-110
 
 <!-- vim-markdown-toc -->
 
+## 配置
+
+首先，在使用前进行配置。
+
+当您仅使用应急响应模块时，本配置并不必要。
+
+1. 运行 config.sh
+
+```bash
+chmod +x config.sh
+su
+./config.sh
+```
+
+2. 配置 ssmtp
+
+当您不使用邮件预警通知用户时，本配置并不必要。
+
+```bash
+vi /etc/ssmtp/ssmtp.conf # root privilidge is needed
+```
+
+依照以下示例，更改配置
+
+```
+root=username@gmail.com
+mailhub=smtp.gmail.com:465
+rewriteDomain=gmail.com
+AuthUser=username
+AuthPass=authcode
+FromLineOverride=YES
+UseTLS=YES
+```
+
+**注意：在发送邮件时，发件人地址需与此处填写地址相同**
+
+
 ## 配色
 
 |color|info|
