@@ -14,6 +14,10 @@ scanRes=()
 # risk level of each scan
 riskLevel=()
 
+fromAddr=""
+toAddr=""
+emailFlag=0
+
 #######################################################################
 # pre operations
 # 1. generate timeStamp
@@ -993,17 +997,50 @@ echo "This is the local scan module."
 echo -e "-----------------------------------------------\033[0m"
 
 # parameter process
-# -h
-if [[ $1 == "--help" ]]||[[ $1 == "-h" ]]; then
-	echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h, --help\t help\n\t-s, --silent\t Do not display details"
-# -s
-elif [[ $1 == "--silent" ]]||[[ $1 == "-s" ]]; then
-	isSilent=1
-	echo -e "Silent mode is chosen."
-# no param or wrong param
+while getopts ":f:t:h" cliName; do
+    case "${cliName}" in
+        h)
+            echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h\t help\n\t-f\t sender email addr\n\t-t\t receiver email addr"
+            ;;
+        f)
+            fromAddr=${OPTARG}
+            if [[ $fromAddr =~ ^([A-Za-z0-9_\-\.\u4e00-\u9fa5])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$ ]]; then
+                :
+            else
+                echo -e "\e[0;31mThere should be an email addr after -f\033[0m"
+                exit
+            fi
+            ;;
+        t)
+            toAddr=${OPTARG}
+            if [[ $toAddr =~ ^([A-Za-z0-9_\-\.\u4e00-\u9fa5])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$ ]]; then
+                :
+            else
+                echo -e "\e[0;31mThere should be an email addr after -t\033[0m"
+                exit
+            fi
+            ;;
+        :)
+            echo -e "\e[0;31mNo argument value for option $OPTARG\033[0m"
+            ;;
+        *)
+            echo -e "\e[0;31mUnknown option $OPTARG\033[0m"
+            echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h\t help\n\t-f\t sender email addr\n\t-t\t receiver email addr"
+            exit
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+# do not sent email
+if [[ "${fromAddr}" == "" ]] && [[ "${toAddr}" == "" ]]; then
+    emailFlag=0
+elif [[ "${fromAddr}" == "" ]] || [[ "${toAddr}" == "" ]]; then
+    echo -e "\e[0;31mTo send an email, -f and -t are both needed\033[0m"
+	exit
 else
-	isSilent=0
-	echo -e "Silent mode is not chosen."
+	emailFlag=1
+    echo "Send email from ${fromAddr} to ${toAddr}"
 fi
 
 echo -e "\n\e[1;34m-----------------------------------------------"
@@ -1036,3 +1073,7 @@ echo "Generating reports"
 echo -e "-----------------------------------------------\033[0m"
 ReportFoot
 ReportSum
+
+if [[ $emailFlag -eq 1 ]]; then
+	SendEmail
+fi

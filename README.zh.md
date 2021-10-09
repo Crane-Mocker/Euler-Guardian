@@ -7,6 +7,7 @@ https://gitee.com/openeuler-competition/summer2021-110
 
 <!-- vim-markdown-toc GFM -->
 
+* [配置](#配置)
 * [配色](#配色)
 * [front end 前端](#front-end-前端)
 * [模块说明](#模块说明)
@@ -16,9 +17,10 @@ https://gitee.com/openeuler-competition/summer2021-110
 		* [SecCheck 安全策略检查](#seccheck-安全策略检查)
 		* [UserInfoChk 用户信息检查](#userinfochk-用户信息检查)
 		* [UserIdenChk 用户身份检查](#useridenchk-用户身份检查)
-		* [FileChk 文件权限检查](#filechk-文件权限检查)
+		* [FileChk 文件检查](#filechk-文件检查)
 		* [AuditChk 操作系统安全审计](#auditchk-操作系统安全审计)
 		* [OVALChk 软件包版本漏洞检查](#ovalchk-软件包版本漏洞检查)
+		* [SendEmail 邮件预警](#sendemail-邮件预警)
 	* [ER emergency response 应急响应模块](#er-emergency-response-应急响应模块)
 		* [BasicCheck](#basiccheck)
 		* [SensitiveFileCheck](#sensitivefilecheck)
@@ -92,6 +94,13 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 ### local scan 本地扫描模块
 
 本模块需以root权限运行。运行完成后将生成报告。
+
+```
+Usage:
+	-h	 help
+	-f	 sender email addr
+	-t	 receiver email addr
+```
 
 报告分为四部分：
 
@@ -230,6 +239,17 @@ https://oval.cisecurity.org/repository/download
 https://security-metadata.canonical.com
 
 https://www.redhat.com/security/data/oval/v2/
+
+#### SendEmail 邮件预警
+
+发送邮件预警。
+
+![LS-SendEmail](pic/LS-SendEmail.png)
+
+![LS-Succ](pic/LS-Succ.png)
+
+![LS-Email](pic/LS-Email.png)
+
 
 ### ER emergency response 应急响应模块
 

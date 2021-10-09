@@ -8,6 +8,7 @@ https://gitee.com/openeuler-competition/summer2021-110
 
 <!-- vim-markdown-toc GFM -->
 
+* [Configuration](#configuration)
 * [color in CLI](#color-in-cli)
 * [front end](#front-end)
 * [Module](#module)
@@ -20,6 +21,7 @@ https://gitee.com/openeuler-competition/summer2021-110
 		* [FileChk](#filechk)
 		* [AuditChk](#auditchk)
 		* [OVALChk](#ovalchk)
+		* [SendEmail](#sendemail)
 	* [ER emergency response module](#er-emergency-response-module)
 		* [BasicCheck](#basiccheck)
 		* [SensitiveFileCheck](#sensitivefilecheck)
@@ -92,6 +94,13 @@ https://necolas.github.io/normalize.css/8.0.1/normalize.css
 ### local scan module
 
 This module should be run as root. Reports will be generated after scanning.
+
+```
+Usage:
+	-h	 help
+	-f	 sender email addr
+	-t	 receiver email addr
+```
 
 There are 4 reports generated in total.
 
@@ -227,6 +236,16 @@ https://oval.cisecurity.org/repository/download
 https://security-metadata.canonical.com
 
 https://www.redhat.com/security/data/oval/v2/
+
+#### SendEmail
+
+Send email to user.
+
+![LS-SendEmail](pic/LS-SendEmail.png)
+
+![LS-Succ](pic/LS-Succ.png)
+
+![LS-Email](pic/LS-Email.png)
 
 ### ER emergency response module
 
