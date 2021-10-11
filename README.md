@@ -251,6 +251,12 @@ Send email to user.
 
 Automatical emergency response after intrusion
 
+```
+Usage:
+	-h	 help
+	-r	 An HTML report will be generated
+```
+
 An HTML report can be generated according to the scan results.
 
 ![ER-cli](pic/ER-cli.png)

@@ -15,6 +15,8 @@ scanRes=()
 # risk level of each scan
 riskLevel=()
 
+genReport=0
+
 #####################################################################
 # basic check
 # 1. ip_tables
@@ -575,19 +577,26 @@ echo "This is the emergency response module."
 echo -e "-----------------------------------------------\033[0m"
 
 # parameter process
-# -h
-if [[ $1 == "--help" ]]||[[ $1 == "-h" ]]; then
-	echo -e "This is the emergency response module of Euler Guardian.\nRoot is needed to run the scan.\nUsage:\n\t-h, --help\t help\n\t-r, --report\t An HTML report will be generated"
-	exit
-# -r
-elif [[ $1 == "--report" ]]||[[ $1 == "-r" ]]; then
-	genReport=1
-	echo -e "\e[1;34mA scan report will be generated.\033[0m"
-# no param or wrong param
-else
-	genReport=0
-	echo -e "\e[1;34mWon't generate a scan report.\033[0m"
-fi
+while getopts ":rh" cliName; do
+    case "${cliName}" in
+        h)
+            echo -e "This is the emergency response module of Euler Guardian.\nRoot is needed to run the scan.\nUsage:\n\t-h\t help\n\t-r\t An HTML report will be generated"
+            ;;
+        r)
+        	genReport=1
+        	echo -e "\e[1;34mA scan report will be generated.\033[0m"
+            ;;
+        :)
+            echo -e "\e[0;31mNo argument value for option $OPTARG\033[0m"
+            ;;
+        *)
+            echo -e "\e[0;31mUnknown option $OPTARG\033[0m"
+            echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h\t help\n\t-f\t sender email addr\n\t-t\t receiver email addr"
+            exit
+            ;;
+    esac
+done
+shift $((OPTIND-1))
 
 echo -e "\n\e[1;34m-----------------------------------------------"
 echo "Basic check start"
