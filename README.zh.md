@@ -189,9 +189,16 @@ https://blog.csdn.net/xiezuoyong/article/details/49890695
 
 **password**接口确认用户使用的口令的合法性
 
-|retry|difok|minlen|ucredit|lcredit|dcredit|dictpath|
-|---|---|---|---|---|---|
-|尝试次数|最少不同字符|最小口令长度|最少大写字母|最少小写字母|最少数字|密码字典路径|
+|option|information|
+|---|---|
+|retry|尝试次数|
+|difok|最少不同字符|
+|minlen|最小口令长度|
+|ucredit|最少大写字母|
+|lcredit|最少小写字母|
+|dcredit|最少数字|
+|dictpath|密码字典路径|
+
 
 7.空口令用户检查
 
