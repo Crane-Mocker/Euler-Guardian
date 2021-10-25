@@ -1001,7 +1001,8 @@ while getopts ":f:t:h" cliName; do
     case "${cliName}" in
         h)
             echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h\t help\n\t-f\t sender email addr\n\t-t\t receiver email addr"
-            ;;
+			exit
+			;;
         f)
             fromAddr=${OPTARG}
             if [[ $fromAddr =~ ^([A-Za-z0-9_\-\.\u4e00-\u9fa5])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,8})$ ]]; then
@@ -1022,7 +1023,8 @@ while getopts ":f:t:h" cliName; do
             ;;
         :)
             echo -e "\e[0;31mNo argument value for option $OPTARG\033[0m"
-            ;;
+			exit
+			;;
         *)
             echo -e "\e[0;31mUnknown option $OPTARG\033[0m"
             echo -e "This is the local scan module of Euler Guardian.\nRoot is needed to run the scan.\nAn HTML report will be generated according to the scan results.\nUsage:\n\t-h\t help\n\t-f\t sender email addr\n\t-t\t receiver email addr"
